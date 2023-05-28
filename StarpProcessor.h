@@ -2,13 +2,15 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
+#include <set>
+
 //==============================================================================
-class AudioPluginAudioProcessor  : public juce::AudioProcessor
+class StarpProcessor  : public juce::AudioProcessor
 {
 public:
     //==============================================================================
-    AudioPluginAudioProcessor();
-    ~AudioPluginAudioProcessor() override;
+    StarpProcessor();
+    ~StarpProcessor() override;
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -44,5 +46,12 @@ public:
 
 private:
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessor)
+    AudioParameterFloat* speed;
+    int currentNote, lastNoteValue;
+    int time;
+    float rate;
+    std::set<int> notes;
+
+    //==============================================================================
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)
 };

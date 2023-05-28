@@ -1,8 +1,8 @@
-#include "PluginProcessor.h"
-#include "PluginEditor.h"
+#include "StarpProcessor.h"
+#include "StarpEditor.h"
 
 //==============================================================================
-AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAudioProcessor& p)
+AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (StarpProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p)
 {
     juce::ignoreUnused (processorRef);

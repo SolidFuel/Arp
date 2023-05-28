@@ -2,6 +2,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
+
 #include <set>
 
 //==============================================================================
@@ -28,10 +29,10 @@ public:
     //==============================================================================
     const juce::String getName() const override;
 
-    bool acceptsMidi() const override;
-    bool producesMidi() const override;
-    bool isMidiEffect() const override;
-    double getTailLengthSeconds() const override;
+    bool acceptsMidi() const override { return true; };
+    bool producesMidi() const override { return true; };
+    bool isMidiEffect() const override { return true; };
+    double getTailLengthSeconds() const override { return 0.0; };
 
     //==============================================================================
     int getNumPrograms() override;
@@ -46,11 +47,11 @@ public:
 
 private:
     //==============================================================================
-    AudioParameterFloat* speed;
+    juce::AudioParameterFloat* speed;
     int currentNote, lastNoteValue;
     int time;
     float rate;
-    std::set<int> notes;
+    juce::SortedSet<int> notes;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)

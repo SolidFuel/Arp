@@ -3,7 +3,11 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 
-#include <set>
+struct speed_value {
+    juce::String name;
+    double multiplier;
+};
+
 
 //==============================================================================
 class StarpProcessor  : public juce::AudioProcessor
@@ -47,11 +51,13 @@ public:
 
 private:
     //==============================================================================
-    juce::AudioParameterFloat* speed;
+    juce::AudioParameterChoice* speed;
     int currentNote, lastNoteValue;
     int time;
-    float rate;
+    double rate;
     juce::SortedSet<int> notes;
+
+    double getSpeedFactor();
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)

@@ -1,12 +1,24 @@
 #pragma once
 
+#include "Algorithm.h"
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
+#include <fstream>
 
 struct speed_value {
     juce::String name;
     double multiplier;
 };
+
+struct played_note {
+    int note_value;
+    double start_slot;
+
+};
+
+bool operator==(const played_note& lhs, const played_note& rhs);
+bool operator<(const played_note& lhs, const played_note& rhs);
 
 
 //==============================================================================
@@ -52,12 +64,24 @@ public:
 private:
     //==============================================================================
     juce::AudioParameterChoice* speed;
-    int currentNote, lastNoteValue;
-    int time;
+    juce::AudioParameterChoice* algorithm_parm;
+    juce::AudioParameterFloat* gate;
+    
+    int current_algo_index = -1;
     double rate;
+    int currentNote;
+
     juce::SortedSet<int> notes;
+    int slotCount;
+
+    juce::Array<played_note> *active_notes = nullptr;
+
+    juce::FileLogger *dbgout = nullptr;
+
+    AlgorithmBase *algo = nullptr;
 
     double getSpeedFactor();
+    double getGate();
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)

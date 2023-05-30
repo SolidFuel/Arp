@@ -1,6 +1,8 @@
 #include "StarpProcessor.h"
 #include "StarpEditor.h"
 
+#include <iomanip>
+
 speed_value speed_parameter_values[] = {
     speed_value{"1/16", 0.25},
     speed_value{"1/8" , 0.50},
@@ -9,6 +11,15 @@ speed_value speed_parameter_values[] = {
 };
 
 int default_speed = 2;
+
+bool operator==(const played_note& lhs, const played_note& rhs) {
+    return lhs.note_value == rhs.note_value;
+}
+
+bool operator<(const played_note& lhs, const played_note& rhs) {
+    return lhs.note_value < rhs.note_value;
+}
+
 
 
 //==============================================================================
@@ -23,11 +34,66 @@ StarpProcessor::StarpProcessor()
     }
     speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", choices, default_speed);
     addParameter(speed);
+
+    addParameter (gate = new juce::AudioParameterFloat ({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0));
+    addParameter(algorithm_parm = new juce::AudioParameterChoice({"algorithm", 1}, "Aglo", {"up", "down"}, 0));
+
+    if (algo == nullptr) {
+        algo = (AlgorithmBase *)new UpAlgorithm();
+        current_algo_index = 0;
+    }
+
+    dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "----V40---");
+
+
 }
 
-StarpProcessor::~StarpProcessor()
-{
+StarpProcessor::~StarpProcessor() {
+    releaseResources();
+
+    if (algo != nullptr) {
+        delete algo;
+        algo = nullptr;
+    }
+
+    if (dbgout != nullptr) {
+        delete dbgout;
+        dbgout = nullptr;
+    }
+
 }
+
+//==============================================================================
+void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
+
+    dbgout->logMessage("GET STATE called");
+
+    std::unique_ptr<juce::XmlElement> xml (new juce::XmlElement ("StarpStateInfo"));
+    xml->setAttribute ("version", (int) 1);
+    xml->setAttribute ("speed", (int) *speed);
+    xml->setAttribute ("algorithm", (int) *algorithm_parm);
+    xml->setAttribute ("gate", *gate); 
+    copyXmlToBinary (*xml, destData);
+
+}
+
+void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
+
+    dbgout->logMessage("SET STATE called");
+
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+
+    if (xmlState.get() != nullptr) {
+        if (xmlState->hasTagName ("StarpStateInfo"))
+        {
+            *speed          = xmlState->getIntAttribute("speed", 2);
+            *algorithm_parm = xmlState->getIntAttribute ("algorithm", 0);
+            *gate           = (float) xmlState->getDoubleAttribute ("gate", 100.0);
+        }
+    }
+}
+
+
 
 //==============================================================================
 const juce::String StarpProcessor::getName() const
@@ -68,16 +134,25 @@ void StarpProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         juce::ignoreUnused (samplesPerBlock);
 
         notes.clear();
-        currentNote = -1;
-        lastNoteValue = -1;
-        time = 0;
-        rate = static_cast<double> (sampleRate);
+        rate = sampleRate;
+        slotCount = 0;
+
+        if (active_notes == nullptr) {
+            active_notes = new juce::Array<played_note>();
+        }
+
 }
 
 void StarpProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
+
+    if (active_notes != nullptr) {
+        delete active_notes;
+        active_notes = nullptr;
+    }
+
 }
 
 bool StarpProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const {
@@ -95,12 +170,33 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     double bpm = 120.0;
     double qpb = 1; // quarter notes per beat
+    double slot_fraction = 0.0;
+    double slots = -1.0;
+    bool is_playing = false;
+
+    int new_algo = *algorithm_parm;
+
+    if (new_algo != current_algo_index) {
+        AlgorithmBase *tmp = (algo == nullptr) ? new UpAlgorithm() : algo ;
+        switch (new_algo) {
+            case 0 :
+                algo = new UpAlgorithm(tmp);
+                break;
+            case 1 :
+                algo = new DownAlgorithm(tmp);
+                break;
+        }
+        delete tmp;
+        current_algo_index = new_algo;
+    }
 
     auto *play_head = getPlayHead();
 
     if (play_head) {
         auto position = play_head->getPosition();
         if (position) {
+            is_playing = position->getIsPlaying();
+
             auto hostBpm = position->getBpm();
             if (hostBpm) {
                 bpm = *hostBpm;
@@ -109,13 +205,39 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             if (time_sig) {
                 qpb = 4.0 / time_sig->denominator;
             }
+
+            auto opt_pos_qn = position->getPpqPosition();
+            jassert(opt_pos_qn);
+            if (opt_pos_qn) {
+                // position in slots - will be more useful later.
+                slots = *opt_pos_qn / getSpeedFactor();
+                // how far along in the current slot are we ?
+                slot_fraction = (slots - std::floor(slots));
+                if (slot_fraction < 0.00001) {
+                    slot_fraction = 0.0;
+                } else if (slot_fraction > 0.99999 ) {
+                    slot_fraction = 0.0;
+                }
+            }
         }
     }
-    int samples_per_qn =  static_cast<int>(std::ceil((rate * 60.0) / (bpm * qpb))) ;
-    
 
-    // get note duration
-    auto noteDuration = static_cast<int>(std::ceil(double(samples_per_qn) * getSpeedFactor()));
+    int samples_per_qn =  static_cast<int>(std::ceil((rate * 60.0) / (bpm * qpb))) ;
+
+    double slots_in_buffer = (double(numSamples) / double(samples_per_qn)) / getSpeedFactor();
+    
+    if (is_playing) {
+        std::stringstream x;
+        x << "START Slots = " << slots << "; slot_fraction = " << std::setprecision(10) << slot_fraction 
+            << "; gate = " << getGate() << "; slots_in_buffer = " << slots_in_buffer;
+        x << "; numSamples = " << numSamples << "; samples_per_qn = " << samples_per_qn;
+        dbgout->logMessage(x.str());
+    }
+
+    // get slot duration
+
+    auto slotDuration = static_cast<int>(std::ceil(double(samples_per_qn) * getSpeedFactor()));
+    //auto noteDuration = static_cast<int>(std::ceil(double(samples_per_qn) * getSpeedFactor() * getGate()));
 
     for (const auto metadata : midiMessages)
     {
@@ -126,30 +248,70 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     midiMessages.clear();
 
-    auto offset = 0;
-    int time_passed = numSamples;
+     auto *new_notes = new juce::Array<played_note>();
 
-    if ((time + numSamples) >= noteDuration) {
-        offset = juce::jmax (0, juce::jmin ((int) (noteDuration - time), numSamples - 1));
 
-        if (lastNoteValue > 0) {
-            midiMessages.addEvent (juce::MidiMessage::noteOff (1, lastNoteValue), offset);
-            lastNoteValue = -1;
+    for (int idx = 0; idx < active_notes->size(); ++idx) {
+        auto thisNote = active_notes->getUnchecked(idx);
+        auto note_value = thisNote.note_value;
+        auto start_slot = thisNote.start_slot;
+
+        if ( (slots - start_slot + slots_in_buffer) > getGate() ) {
+            // This is the number of samples into the buffer where the note should turn off
+            int offset = int((getGate() - (slots - start_slot)) * double(slotDuration));
+            {
+                std::stringstream x;
+                x << "stop " << note_value << " @ " << offset;
+                dbgout->logMessage(x.str());
+            }
+            midiMessages.addEvent (juce::MidiMessage::noteOff (1, note_value), offset);
+
+        } else {
+            // we didn't stop it, so copy to the new list
+            new_notes->add(thisNote);
         }
     }
 
-    if (lastNoteValue < 0 ) {
+    delete active_notes;
+    active_notes = new_notes;
 
-        if (notes.size() > 0) {
-            currentNote = (currentNote + 1) % notes.size();
-            lastNoteValue = notes[currentNote];
-            midiMessages.addEvent (juce::MidiMessage::noteOn  (1, lastNoteValue, (std::uint8_t) 127), offset);
-            time = numSamples - offset;
-            time_passed = 0;
+    if ( (slot_fraction == 0.0) || (slot_fraction + slots_in_buffer) > 1.0 ) {
+
+        // start a new note
+        // This is the number of samples into the buffer where the note should turn on
+        int offset = 0;
+        if (slot_fraction > 0.0) {
+            offset = int((1.0 - slot_fraction) * double(slotDuration));
+        } 
+
+        if (offset < (numSamples-2) && notes.size() > 0) {
+            int new_note_value = algo->getNextValue(notes);
+            int new_note = notes[new_note_value];
+            midiMessages.addEvent (juce::MidiMessage::noteOn  (1, new_note, (std::uint8_t) 127), offset);
+            double start_slot;
+            if (offset == 0) {
+                start_slot = slots;
+            } else {
+                start_slot = slots - slot_fraction + 1.0;
+            }
+            active_notes->add({new_note, start_slot});
+            {
+                std::stringstream x;
+                x << "start " << new_note << " @ " << offset << "; slot = " << start_slot;
+                dbgout->logMessage(x.str());
+            }
         }
+
     }
 
-    time = (time + time_passed) % noteDuration;
+    if (is_playing) {
+        std::stringstream x;
+        x << "END " << "active count " << active_notes->size();
+        dbgout->logMessage(x.str());
+    }
+
+
+
 }
 
 
@@ -165,24 +327,13 @@ juce::AudioProcessorEditor* StarpProcessor::createEditor() {
 }
 
 //==============================================================================
-void StarpProcessor::getStateInformation (juce::MemoryBlock& destData)
-{
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-    juce::ignoreUnused (destData);
-}
-
-void StarpProcessor::setStateInformation (const void* data, int sizeInBytes)
-{
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
-    juce::ignoreUnused (data, sizeInBytes);
-}
-
 
 double StarpProcessor:: getSpeedFactor() {
     return speed_parameter_values[*speed].multiplier;
+}
+
+double StarpProcessor::getGate() {
+    return *gate / 100.0;
 }
 
 //==============================================================================

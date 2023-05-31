@@ -1,5 +1,6 @@
 #include "StarpProcessor.h"
 #include "StarpEditor.h"
+#include "Starp.hpp"
 
 #include <iomanip>
 
@@ -39,7 +40,9 @@ StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
     addParameter(speed);
 
     addParameter (gate = new juce::AudioParameterFloat ({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0));
-    addParameter(algorithm_parm = new juce::AudioParameterChoice({"algorithm", 1}, "Aglo", {"up", "down", "random"}, 0));
+    addParameter(algorithm_parm = new juce::AudioParameterChoice({"algorithm", 3}, "Algorithm", {"up", "down", "random"}, 0));
+    addParameter(velocity = new juce::AudioParameterInt({"velocity", 4}, "Velocity", 1, 127, 100));
+    addParameter(velo_range = new juce::AudioParameterInt({"vel. range", 4}, "Vel. Range", 0, 64, 0));
 
     // Set up the default algorithm
     if (algo == nullptr) {
@@ -47,8 +50,9 @@ StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
         current_algo_index = 0;
     }
 
+#if STARP_DEBUG
     dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "----V40---");
-
+#endif
 
 }
 
@@ -70,8 +74,9 @@ StarpProcessor::~StarpProcessor() {
 //==============================================================================
 void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
 
+#if STARP_DEBUG
     dbgout->logMessage("GET STATE called");
-
+#endif
     std::stringstream hash;
 
     hash << std::hex << randomKey;
@@ -82,26 +87,33 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
     xml->setAttribute ("algorithm", (int) *algorithm_parm);
     xml->setAttribute ("gate", *gate); 
     xml->setAttribute("key", juce::String{randomKey});
+    xml->setAttribute("velocity", *velocity);
+    xml->setAttribute("velocity_range", *velo_range);
 
+#if STARP_DEBUG
     dbgout->logMessage(xml->toString());
-
+#endif
     copyXmlToBinary (*xml, destData);
 
 }
 
 void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
-
+#if STARP_DEBUG
     dbgout->logMessage("SET STATE called");
+#endif
 
     std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 
     if (xmlState.get() != nullptr) {
         if (xmlState->hasTagName ("StarpStateInfo"))  {
+#if STARP_DEBUG
             dbgout->logMessage(xmlState->toString());
-
+#endif
             *speed          = xmlState->getIntAttribute("speed", 2);
             *algorithm_parm = xmlState->getIntAttribute ("algorithm", 0);
             *gate           = (float) xmlState->getDoubleAttribute ("gate", 100.0);
+            *velocity       = xmlState->getIntAttribute("velocity", 100);
+            *velo_range     = xmlState->getIntAttribute("velocity_range", 0);
 
             if (xmlState->hasAttribute("key")) {
                 randomKey = xmlState->getStringAttribute("key", "-42").getLargeIntValue();
@@ -148,11 +160,11 @@ void StarpProcessor::changeProgramName (int index, const juce::String& newName)
 //==============================================================================
 void StarpProcessor::prepareToPlay (double sampleRate, int) {
 
+#if STARP_DEBUG
     dbgout->logMessage("PREPARE called");
-
+#endif
     notes.clear();
     rate = sampleRate;
-    slotCount = 0;
 
     if (active_notes == nullptr) {
         active_notes = new juce::Array<played_note>();
@@ -167,7 +179,9 @@ void StarpProcessor::releaseResources()
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 
+#if STARP_DEBUG
     dbgout->logMessage("RELEASE called");
+#endif
 
     if (active_notes != nullptr) {
         delete active_notes;
@@ -175,6 +189,8 @@ void StarpProcessor::releaseResources()
     }
 
 }
+
+//==============================================================================
 
 void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                               juce::MidiBuffer& midiMessages) {
@@ -248,20 +264,22 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     double slots_in_buffer = (double(numSamples) / double(samples_per_qn)) / getSpeedFactor();
     
+
+
+
+#if STARP_DEBUG
     if (is_playing) {
         std::stringstream x;
         x << "START Slots = " << slots << "; slot_fraction = " << std::setprecision(10) << slot_fraction 
             << "; gate = " << getGate() << "; slots_in_buffer = " << slots_in_buffer;
         x << "; numSamples = " << numSamples << "; samples_per_qn = " << samples_per_qn;
         dbgout->logMessage(x.str());
-    } else {
-        return;
-    }
+     }
+#endif
 
     // get slot duration
 
     auto slotDuration = static_cast<int>(std::ceil(double(samples_per_qn) * getSpeedFactor()));
-    //auto noteDuration = static_cast<int>(std::ceil(double(samples_per_qn) * getSpeedFactor() * getGate()));
 
     bool notes_changed = false;
 
@@ -285,11 +303,13 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         if ( (slots - start_slot + slots_in_buffer) > getGate() ) {
             // This is the number of samples into the buffer where the note should turn off
             int offset = int((getGate() - (slots - start_slot)) * double(slotDuration));
+#if STARP_DEBUG
             {
                 std::stringstream x;
                 x << "stop " << note_value << " @ " << offset;
                 dbgout->logMessage(x.str());
             }
+#endif
             midiMessages.addEvent (juce::MidiMessage::noteOff (1, note_value), offset);
 
         } else {
@@ -310,35 +330,55 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             offset = int((1.0 - slot_fraction) * double(slotDuration));
         } 
 
-        if (offset < (numSamples-2) && notes.size() > 0) {
-            int new_note = algo->getNextNote(slots, notes, notes_changed);
-            if (new_note >= 0 ) {
-                midiMessages.addEvent (juce::MidiMessage::noteOn  (1, new_note, (std::uint8_t) 127), offset);
-                double start_slot;
-                if (offset == 0) {
-                    start_slot = slots;
+        if (offset < (numSamples-2) ) {
+            if (notes.size() > 0) {
+                int new_note = algo->getNextNote(slots, notes, notes_changed);
+                if (new_note >= 0 ) {
+                    int range = *velo_range;
+                    int note_velocity = *velocity;
+                    if (range > 0)  {
+                        HashRandom rng{"Velocity", randomKey, slots};
+
+                        int max = juce::jmin(128, note_velocity + range); 
+                        int min = juce::jmax(1, note_velocity - range);
+
+                        note_velocity = rng.nextInt(min, max);
+                    }
+
+                    midiMessages.addEvent (juce::MidiMessage::noteOn  (1, new_note, (std::uint8_t) note_velocity), offset);
+                    double start_slot;
+                    if (offset == 0) {
+                        start_slot = slots;
+                    } else {
+                        start_slot = slots - slot_fraction + 1.0;
+                    }
+                    active_notes->add({new_note, start_slot});
+#if STARP_DEBUG
+                    {
+                        std::stringstream x;
+                        x << "start " << new_note << " @ " << offset << "; slot = " << start_slot;
+                        dbgout->logMessage(x.str());
+                    }
+#endif
+#if STARP_DEBUG
                 } else {
-                    start_slot = slots - slot_fraction + 1.0;
-                }
-                active_notes->add({new_note, start_slot});
-                {
-                    std::stringstream x;
-                    x << "start " << new_note << " @ " << offset << "; slot = " << start_slot;
-                    dbgout->logMessage(x.str());
+                    dbgout->logMessage("algo could not find note to start");
+#endif
                 }
             } else {
-                dbgout->logMessage("algo could not find note to start");
+                algo->reset();
             }
         }
 
     }
 
+#if STARP_DEBUG
     if (is_playing) {
         std::stringstream x;
         x << "END " << "active count " << active_notes->size();
         dbgout->logMessage(x.str());
     }
-
+#endif
 
 
 }

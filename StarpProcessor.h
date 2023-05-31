@@ -66,15 +66,15 @@ private:
     juce::AudioParameterChoice* speed;
     juce::AudioParameterChoice* algorithm_parm;
     juce::AudioParameterFloat* gate;
+    juce::AudioParameterInt* velocity;
+    juce::AudioParameterInt* velo_range;
 
     juce::int64 randomKey = 0L;
 
     int current_algo_index = -1;
     double rate;
-    int currentNote;
 
     juce::SortedSet<int> notes;
-    int slotCount;
 
     juce::Array<played_note> *active_notes = nullptr;
 

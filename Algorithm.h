@@ -1,6 +1,6 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
-#include "TinySHA1.hpp"
+#include "HashRandom.hpp"
 
 class AlgorithmBase {
 
@@ -15,6 +15,10 @@ public:
     }
     virtual int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed)  = 0;
 
+    virtual void reset() {
+        last_index = -1;
+    }
+
     virtual ~AlgorithmBase() {}
 
 };
@@ -22,7 +26,7 @@ public:
 class UpAlgorithm : public AlgorithmBase {
     using AlgorithmBase::AlgorithmBase;
 
-    int getNextNote(double, const juce::SortedSet<int> &notes, bool notes_changed) override {
+    int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
         if (notes.size() > 0) {
             last_index = (++last_index) % notes.size();
             return notes[last_index];
@@ -37,7 +41,7 @@ class UpAlgorithm : public AlgorithmBase {
 class DownAlgorithm : public AlgorithmBase {
     using AlgorithmBase::AlgorithmBase;
 
-    int getNextNote(double, const juce::SortedSet<int> &notes, bool notes_changed) override {
+    int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
         if (notes.size() > 0) {
 
             if (last_index <= 0) {
@@ -74,12 +78,18 @@ public:
         dbgout_ = logger;
     }
 
+    void reset() {
+        AlgorithmBase::reset();
+        last_note = -1;
+        available_notes.clearQuick();
+    }
+
     int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
 
         if (available_notes.isEmpty()) {
             available_notes.addSet(notes);
         } else if (notes_changed) {
-            available_notes.clear();
+            available_notes.clearQuick();
             // Add all the stuff from the new set.
             available_notes.addSet(notes);
         }
@@ -110,18 +120,13 @@ public:
 
 private :
     int getRandom(double slot, int note_to_avoid, const juce::SortedSet<int> & notes) {
-        std::stringstream buf;
-        buf << std::hex << key_ << slot;
 
-        sha1::SHA1 hash;
-        hash.processBytes(buf.str().c_str(), buf.str().size());
 
-        uint8_t digest[20];
-        hash.getDigestBytes(digest);
+        HashRandom rng{"Note", key_, slot};
 
         for (int j=0; j < 20; ++j) {
             // need to do better, but this is an okay proof of concept
-           int maybe =  notes[digest[j] % notes.size()];
+           int maybe =  notes[rng.nextInt(0, notes.size())];
            if (maybe != note_to_avoid)
             return maybe;
         }

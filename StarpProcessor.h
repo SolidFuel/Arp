@@ -33,7 +33,7 @@ public:
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
+    bool isBusesLayoutSupported (const BusesLayout&) const override { return true; };
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     using AudioProcessor::processBlock;
@@ -66,7 +66,9 @@ private:
     juce::AudioParameterChoice* speed;
     juce::AudioParameterChoice* algorithm_parm;
     juce::AudioParameterFloat* gate;
-    
+
+    juce::int64 randomKey = 0L;
+
     int current_algo_index = -1;
     double rate;
     int currentNote;

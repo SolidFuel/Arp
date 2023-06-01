@@ -68,6 +68,7 @@ private:
     juce::AudioParameterFloat* gate;
     juce::AudioParameterInt* velocity;
     juce::AudioParameterInt* velo_range;
+    juce::AudioParameterInt* probability;
 
     juce::int64 randomKey = 0L;
 

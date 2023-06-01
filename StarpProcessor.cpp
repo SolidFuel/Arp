@@ -32,6 +32,8 @@ StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
     randomKey = rng.nextInt64();
 
     // Set up the Audio Parameters
+    addParameter(algorithm_parm = new juce::AudioParameterChoice({"algorithm", 3}, "Algorithm", {"up", "down", "random"}, 0));
+
     juce::StringArray choices;
     for (auto const &v : speed_parameter_values) {
         choices.add(v.name);
@@ -39,10 +41,10 @@ StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
     speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", choices, default_speed);
     addParameter(speed);
 
-    addParameter (gate = new juce::AudioParameterFloat ({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0));
-    addParameter(algorithm_parm = new juce::AudioParameterChoice({"algorithm", 3}, "Algorithm", {"up", "down", "random"}, 0));
-    addParameter(velocity = new juce::AudioParameterInt({"velocity", 4}, "Velocity", 1, 127, 100));
-    addParameter(velo_range = new juce::AudioParameterInt({"vel. range", 4}, "Vel. Range", 0, 64, 0));
+    addParameter(probability = new juce::AudioParameterInt({"probability", 4}, "Probability", 0, 100, 100));
+    addParameter(gate = new juce::AudioParameterFloat ({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0));
+    addParameter(velocity = new juce::AudioParameterInt({"velocity", 5}, "Velocity", 1, 127, 100));
+    addParameter(velo_range = new juce::AudioParameterInt({"vel. range", 6}, "Vel. Range", 0, 64, 0));
 
     // Set up the default algorithm
     if (algo == nullptr) {
@@ -89,6 +91,7 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
     xml->setAttribute("key", juce::String{randomKey});
     xml->setAttribute("velocity", *velocity);
     xml->setAttribute("velocity_range", *velo_range);
+    xml->setAttribute("probability", *probability);
 
 #if STARP_DEBUG
     dbgout->logMessage(xml->toString());
@@ -114,6 +117,7 @@ void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
             *gate           = (float) xmlState->getDoubleAttribute ("gate", 100.0);
             *velocity       = xmlState->getIntAttribute("velocity", 100);
             *velo_range     = xmlState->getIntAttribute("velocity_range", 0);
+            *probability    = xmlState->getIntAttribute("probability", 100);
 
             if (xmlState->hasAttribute("key")) {
                 randomKey = xmlState->getStringAttribute("key", "-42").getLargeIntValue();
@@ -334,32 +338,36 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             if (notes.size() > 0) {
                 int new_note = algo->getNextNote(slots, notes, notes_changed);
                 if (new_note >= 0 ) {
-                    int range = *velo_range;
-                    int note_velocity = *velocity;
-                    if (range > 0)  {
-                        HashRandom rng{"Velocity", randomKey, slots};
+                    int note_prob = *probability;
+                    HashRandom prob_rng{"Probability", randomKey, slots};
+                    if (prob_rng.nextInt(0, 101) <= note_prob ) {
+                        int range = *velo_range;
+                        int note_velocity = *velocity;
+                        if (range > 0)  {
+                            HashRandom vel_rng{"Velocity", randomKey, slots};
 
-                        int max = juce::jmin(128, note_velocity + range); 
-                        int min = juce::jmax(1, note_velocity - range);
+                            int max = juce::jmin(128, note_velocity + range); 
+                            int min = juce::jmax(1, note_velocity - range);
 
-                        note_velocity = rng.nextInt(min, max);
-                    }
+                            note_velocity = vel_rng.nextInt(min, max);
+                        }
 
-                    midiMessages.addEvent (juce::MidiMessage::noteOn  (1, new_note, (std::uint8_t) note_velocity), offset);
-                    double start_slot;
-                    if (offset == 0) {
-                        start_slot = slots;
-                    } else {
-                        start_slot = slots - slot_fraction + 1.0;
-                    }
-                    active_notes->add({new_note, start_slot});
+                        midiMessages.addEvent (juce::MidiMessage::noteOn  (1, new_note, (std::uint8_t) note_velocity), offset);
+                        double start_slot;
+                        if (offset == 0) {
+                            start_slot = slots;
+                        } else {
+                            start_slot = slots - slot_fraction + 1.0;
+                        }
+                        active_notes->add({new_note, start_slot});
 #if STARP_DEBUG
-                    {
-                        std::stringstream x;
-                        x << "start " << new_note << " @ " << offset << "; slot = " << start_slot;
-                        dbgout->logMessage(x.str());
-                    }
+                        {
+                            std::stringstream x;
+                            x << "start " << new_note << " @ " << offset << "; slot = " << start_slot;
+                            dbgout->logMessage(x.str());
+                        }
 #endif
+                    }
 #if STARP_DEBUG
                 } else {
                     dbgout->logMessage("algo could not find note to start");

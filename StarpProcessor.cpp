@@ -1,5 +1,5 @@
-#include "StarpProcessor.h"
-#include "StarpEditor.h"
+#include "StarpProcessor.hpp"
+#include "StarpEditor.hpp"
 #include "Starp.hpp"
 
 #include <iomanip>

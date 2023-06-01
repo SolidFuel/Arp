@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Algorithm.h"
+#include "Algorithm.hpp"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 

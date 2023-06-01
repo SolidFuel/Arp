@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarpProcessor.h"
+#include "StarpProcessor.hpp"
 
 //==============================================================================
 class AudioPluginAudioProcessorEditor  : public juce::AudioProcessorEditor

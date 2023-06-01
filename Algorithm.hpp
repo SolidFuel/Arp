@@ -11,7 +11,8 @@ public:
 
     AlgorithmBase() = default;
     AlgorithmBase(AlgorithmBase *o){
-        last_index = o->last_index;
+        if (o != nullptr)
+            last_index = o->last_index;
     }
     virtual int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed)  = 0;
 

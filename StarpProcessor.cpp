@@ -11,8 +11,13 @@ speed_value speed_parameter_values[] = {
     speed_value{"1/2" , 2.0 },
 };
 
-int default_speed = 2;
+constexpr int default_speed = 2;
 
+constexpr int default_algo_index = 0; // UpAlgorithm
+
+//============================================================================
+// PLAYED_NOTE methods
+//============================================================================
 bool operator==(const played_note& lhs, const played_note& rhs) {
     return lhs.note_value == rhs.note_value;
 }
@@ -23,7 +28,8 @@ bool operator<(const played_note& lhs, const played_note& rhs) {
 
 
 
-//==============================================================================
+
+//============================================================================
     
 StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
 
@@ -32,7 +38,7 @@ StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
     randomKey = rng.nextInt64();
 
     // Set up the Audio Parameters
-    addParameter(algorithm_parm = new juce::AudioParameterChoice({"algorithm", 3}, "Algorithm", {"up", "down", "random"}, 0));
+    addParameter(algorithm_parm = new juce::AudioParameterChoice({"algorithm", 3}, "Algorithm", {"up", "down", "random"}, default_algo_index));
 
     juce::StringArray choices;
     for (auto const &v : speed_parameter_values) {
@@ -41,16 +47,14 @@ StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
     speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", choices, default_speed);
     addParameter(speed);
 
-    addParameter(probability = new juce::AudioParameterInt({"probability", 4}, "Probability", 0, 100, 100));
-    addParameter(gate = new juce::AudioParameterFloat ({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0));
-    addParameter(velocity = new juce::AudioParameterInt({"velocity", 5}, "Velocity", 1, 127, 100));
-    addParameter(velo_range = new juce::AudioParameterInt({"vel. range", 6}, "Vel. Range", 0, 64, 0));
+    addParameter(probability    = new juce::AudioParameterInt({"probability", 4}, "Probability", 0, 100, 100));
+    addParameter(gate           = new juce::AudioParameterFloat({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0));
+    addParameter(velocity       = new juce::AudioParameterInt({"velocity", 5}, "Velocity", 1, 127, 100));
+    addParameter(velo_range     = new juce::AudioParameterInt({"vel. range", 6}, "Vel. Range", 0, 64, 0));
+    addParameter(timing_delay   = new juce::AudioParameterFloat({ "timing_delay", 7 },   "Delay",    0.0, 30.0, 0.0));
+    addParameter(timing_advance = new juce::AudioParameterFloat({ "timing_advance", 8 }, "Advance", -30.0, 0.0, 0.0));
 
-    // Set up the default algorithm
-    if (algo == nullptr) {
-        algo = (AlgorithmBase *)new UpAlgorithm();
-        current_algo_index = 0;
-    }
+    current_algo_index = -1;
 
 #if STARP_DEBUG
     dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "----V40---");
@@ -73,7 +77,7 @@ StarpProcessor::~StarpProcessor() {
 
 }
 
-//==============================================================================
+//============================================================================
 void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
 
 #if STARP_DEBUG
@@ -128,40 +132,8 @@ void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
 
 
 
-//==============================================================================
-const juce::String StarpProcessor::getName() const
-{
-    return JucePlugin_Name;
-}
-
-int StarpProcessor::getNumPrograms()
-{
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
-}
-
-int StarpProcessor::getCurrentProgram()
-{
-    return 0;
-}
-
-void StarpProcessor::setCurrentProgram (int index)
-{
-    juce::ignoreUnused (index);
-}
-
-const juce::String StarpProcessor::getProgramName (int index)
-{
-    juce::ignoreUnused (index);
-    return {};
-}
-
-void StarpProcessor::changeProgramName (int index, const juce::String& newName)
-{
-    juce::ignoreUnused (index, newName);
-}
-
-//==============================================================================
+//============================================================================
+//============================================================================
 void StarpProcessor::prepareToPlay (double sampleRate, int) {
 
 #if STARP_DEBUG
@@ -173,7 +145,7 @@ void StarpProcessor::prepareToPlay (double sampleRate, int) {
     if (active_notes == nullptr) {
         active_notes = new juce::Array<played_note>();
     } else {
-        active_notes->clear();
+        active_notes->clearQuick();
     }
 
 }
@@ -194,7 +166,7 @@ void StarpProcessor::releaseResources()
 
 }
 
-//==============================================================================
+//============================================================================
 
 void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                               juce::MidiBuffer& midiMessages) {
@@ -213,7 +185,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     int new_algo = *algorithm_parm;
 
     if (new_algo != current_algo_index) {
-        AlgorithmBase *tmp = (algo == nullptr) ? new UpAlgorithm() : algo ;
+        AlgorithmBase *tmp = algo ;
         switch (new_algo) {
             case 0 :
                 algo = new UpAlgorithm(tmp);
@@ -302,11 +274,11 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (int idx = 0; idx < active_notes->size(); ++idx) {
         auto thisNote = active_notes->getUnchecked(idx);
         auto note_value = thisNote.note_value;
-        auto start_slot = thisNote.start_slot;
+        auto end_slot = thisNote.end_slot;
 
-        if ( (slots - start_slot + slots_in_buffer) > getGate() ) {
+        if ( (slots + slots_in_buffer) > end_slot ) {
             // This is the number of samples into the buffer where the note should turn off
-            int offset = int((getGate() - (slots - start_slot)) * double(slotDuration));
+            int offset = int((end_slot - slots) * slotDuration);
 #if STARP_DEBUG
             {
                 std::stringstream x;
@@ -352,18 +324,16 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                             note_velocity = vel_rng.nextInt(min, max);
                         }
 
-                        midiMessages.addEvent (juce::MidiMessage::noteOn  (1, new_note, (std::uint8_t) note_velocity), offset);
-                        double start_slot;
-                        if (offset == 0) {
-                            start_slot = slots;
-                        } else {
-                            start_slot = slots - slot_fraction + 1.0;
-                        }
-                        active_notes->add({new_note, start_slot});
+                        midiMessages.addEvent (
+                            juce::MidiMessage::noteOn(1, new_note, (std::uint8_t) note_velocity), 
+                            offset
+                        );
+                        double end_slot = slots + getGate();
+                        active_notes->add({new_note, end_slot});
 #if STARP_DEBUG
                         {
                             std::stringstream x;
-                            x << "start " << new_note << " @ " << offset << "; slot = " << start_slot;
+                            x << "start " << new_note << " @ " << offset << "; slot = " << end_slot;
                             dbgout->logMessage(x.str());
                         }
 #endif
@@ -392,10 +362,11 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 }
 
 
-//==============================================================================
+//============================================================================
 bool StarpProcessor::hasEditor() const
 {
-    return true; // (change this to false if you choose to not supply an editor)
+    // (change this to false if you choose to not supply an editor)
+    return true;
 }
 
 juce::AudioProcessorEditor* StarpProcessor::createEditor() {
@@ -403,7 +374,7 @@ juce::AudioProcessorEditor* StarpProcessor::createEditor() {
     return new juce::GenericAudioProcessorEditor (*this); 
 }
 
-//==============================================================================
+//============================================================================
 
 double StarpProcessor:: getSpeedFactor() {
     return speed_parameter_values[*speed].multiplier;
@@ -413,7 +384,7 @@ double StarpProcessor::getGate() {
     return *gate / 100.0;
 }
 
-//==============================================================================
+//============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {

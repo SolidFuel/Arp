@@ -13,7 +13,7 @@ struct speed_value {
 
 struct played_note {
     int note_value;
-    double start_slot;
+    double end_slot;
 
 };
 
@@ -43,7 +43,7 @@ public:
     bool hasEditor() const override;
 
     //==============================================================================
-    const juce::String getName() const override;
+    const juce::String getName() const override {return JucePlugin_Name;};
 
     bool acceptsMidi() const override { return true; };
     bool producesMidi() const override { return true; };
@@ -51,11 +51,11 @@ public:
     double getTailLengthSeconds() const override { return 0.0; };
 
     //==============================================================================
-    int getNumPrograms() override;
-    int getCurrentProgram() override;
-    void setCurrentProgram (int index) override;
-    const juce::String getProgramName (int index) override;
-    void changeProgramName (int index, const juce::String& newName) override;
+    int getNumPrograms() override { return 1; };
+    int getCurrentProgram() override { return 0; };
+    void setCurrentProgram (int) override { };
+    const juce::String getProgramName (int) override { return {}; };
+    void changeProgramName (int, const juce::String&) override {};
 
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
@@ -65,10 +65,12 @@ private:
     //==============================================================================
     juce::AudioParameterChoice* speed;
     juce::AudioParameterChoice* algorithm_parm;
-    juce::AudioParameterFloat* gate;
-    juce::AudioParameterInt* velocity;
-    juce::AudioParameterInt* velo_range;
-    juce::AudioParameterInt* probability;
+    juce::AudioParameterFloat*  gate;
+    juce::AudioParameterInt*    velocity;
+    juce::AudioParameterInt*    velo_range;
+    juce::AudioParameterInt*    probability;
+    juce::AudioParameterFloat*  timing_delay;
+    juce::AudioParameterFloat*  timing_advance;
 
     juce::int64 randomKey = 0L;
 

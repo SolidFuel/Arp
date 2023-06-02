@@ -1,1 +1,1 @@
-#define STARP_DEBUG 1
+#define STARP_DEBUG 0

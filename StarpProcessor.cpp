@@ -335,7 +335,9 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
 
     if (pd.is_playing != last_play_state) {
+#if STARP_DEBUG
         dbgout->logMessage("--- Play state change");
+#endif
         next_scheduled_slot_number = -1.0;
         scheduled_notes_.clearQuick();
         last_play_state = pd.is_playing;

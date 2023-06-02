@@ -14,5 +14,6 @@ public:
     HashRandom(const std::uint8_t digest[20]);
     HashRandom(const std::string &category, long long key, double slot);
     int nextInt(int min, int max);
+    float nextFloat(float min, float max);
 
 };

@@ -35,3 +35,12 @@ HashRandom::HashRandom(const std::string &category, long long key, double slot) 
 int HashRandom::nextInt(int min, int max) {
     return rng_->nextInt({min, max});
 }
+
+float HashRandom::nextFloat(float min, float max) {
+    float range = max-min;
+    float val= rng_->nextFloat();
+
+    return val*range + min;
+
+}
+

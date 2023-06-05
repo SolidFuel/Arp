@@ -60,7 +60,7 @@ public:
     bool hasEditor() const override;
 
     //==============================================================================
-    const juce::String getName() const override {return JucePlugin_Name;};
+    const juce::String getName() const override {return JucePlugin_Name;}
 
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return true; }
@@ -72,7 +72,7 @@ public:
     int getCurrentProgram() override { return 0; }
     void setCurrentProgram (int) override { }
     const juce::String getProgramName (int) override { return {}; }
-    void changeProgramName (int, const juce::String&) override {};
+    void changeProgramName (int, const juce::String&) override {}
 
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;

@@ -233,7 +233,7 @@ const position_data StarpProcessor::compute_block_position() {
 
     pd.samples_per_qn =  static_cast<int>(std::ceil((rate_ * 60.0) / (bpm * qpb))) ;
 
-    return std::move(pd);
+    return pd;
 
 }
 

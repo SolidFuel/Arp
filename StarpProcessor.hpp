@@ -50,7 +50,7 @@ public:
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-    bool isBusesLayoutSupported (const BusesLayout&) const override { return true; };
+    bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     using AudioProcessor::processBlock;
@@ -62,16 +62,16 @@ public:
     //==============================================================================
     const juce::String getName() const override {return JucePlugin_Name;};
 
-    bool acceptsMidi() const override { return true; };
-    bool producesMidi() const override { return true; };
-    bool isMidiEffect() const override { return true; };
-    double getTailLengthSeconds() const override { return 0.0; };
+    bool acceptsMidi() const override { return true; }
+    bool producesMidi() const override { return true; }
+    bool isMidiEffect() const override { return true; }
+    double getTailLengthSeconds() const override { return 0.0; }
 
     //==============================================================================
-    int getNumPrograms() override { return 1; };
-    int getCurrentProgram() override { return 0; };
-    void setCurrentProgram (int) override { };
-    const juce::String getProgramName (int) override { return {}; };
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram (int) override { }
+    const juce::String getProgramName (int) override { return {}; }
     void changeProgramName (int, const juce::String&) override {};
 
     //==============================================================================
@@ -114,7 +114,7 @@ private:
     long long last_block_call_ = -1;
 
     void reassign_algorithm(int new_algo);
-    const position_data &compute_block_position();
+    const position_data compute_block_position();
     std::optional<juce::MidiMessage>maybe_play_note(bool notes_changed, double for_slot, double start_pos);
 
     void schedule_note(double current_pos, double slot_number);

@@ -183,7 +183,7 @@ void StarpProcessor::reassign_algorithm(int new_algo) {
 
 }
 
-const position_data &StarpProcessor::compute_block_position() {
+const position_data StarpProcessor::compute_block_position() {
 
     position_data pd{};
 

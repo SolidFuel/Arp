@@ -79,7 +79,7 @@ public:
         dbgout_ = logger;
     }
 
-    void reset() {
+    void reset() override {
         AlgorithmBase::reset();
         last_note = -1;
         available_notes.clearQuick();
@@ -117,7 +117,7 @@ public:
         }
     }
 
-    virtual ~RandomAlgorithm() = default;
+    virtual ~RandomAlgorithm() override = default;
 
 private :
     int getRandom(double slot, int note_to_avoid, const juce::SortedSet<int> & notes) {

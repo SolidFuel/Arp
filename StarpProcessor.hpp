@@ -111,9 +111,11 @@ private:
     double getSpeedFactor();
     double getGate();
 
+    long long last_block_call_ = -1;
+
     void reassign_algorithm(int new_algo);
     const position_data &compute_block_position();
-    std::optional<juce::MidiMessage>maybe_play_note(int offset, bool notes_changed, double for_slot, double start_pos);
+    std::optional<juce::MidiMessage>maybe_play_note(bool notes_changed, double for_slot, double start_pos);
 
     void schedule_note(double current_pos, double slot_number);
 

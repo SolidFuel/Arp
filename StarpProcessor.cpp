@@ -237,7 +237,7 @@ const position_data &StarpProcessor::compute_block_position() {
 
 }
 
-std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(int offset, bool notes_changed, double for_slot, double start_pos) {
+std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_changed, double for_slot, double start_pos) {
 
 
     if (notes_.size() == 0) {
@@ -275,7 +275,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(int offset, boo
 #if STARP_DEBUG
         {
             std::stringstream x;
-            x << "--- start " << new_note << " @ " << offset << "; end = " << end_slot;
+            x << "--- start " << new_note << " @ " << start_pos << "; end = " << end_slot;
             dbgout->logMessage(x.str());
         }
 #endif
@@ -333,13 +333,20 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     
     auto slotDuration = static_cast<int>(std::ceil(double(pd.samples_per_qn) * getSpeedFactor()));
 
+    auto this_call_time = juce::Time::currentTimeMillis();
 
-    if (pd.is_playing != last_play_state) {
+    bool bypassed = false;
+
+    if (this_call_time - last_block_call_ > 100)
+        bypassed = true;
+
+    if (pd.is_playing != last_play_state || bypassed) {
 #if STARP_DEBUG
         dbgout->logMessage("--- Play state change");
 #endif
         next_scheduled_slot_number = -1.0;
         scheduled_notes_.clearQuick();
+        notes_.clearQuick();
         last_play_state = pd.is_playing;
     }
 
@@ -358,14 +365,27 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // === Read Midi Messages and update notes_ set
     bool notes_changed = false;
 
+    juce::MidiBuffer newBuffer;
+
     for (const auto metadata : midiBuffer)
     {
         const auto msg = metadata.getMessage();
         if      (msg.isNoteOn())  { notes_.add(msg.getNoteNumber()); notes_changed = true; }
-        else if (msg.isNoteOff()) { notes_.removeValue(msg.getNoteNumber()); notes_changed = true; }
+        else if (msg.isNoteOff()) { 
+            if (notes_.contains(msg.getNoteNumber())) {
+                notes_.removeValue(msg.getNoteNumber());
+                notes_changed = true; 
+            } else {
+                // if we didn't see the NoteOn assume we were bypassed and put the message back in the buffer.
+                newBuffer.addEvent(msg, metadata.samplePosition);
+            }
+        } else {
+            newBuffer.addEvent(msg, metadata.samplePosition);
+        }
     }
 
-    midiBuffer.clear();
+    midiBuffer.swapWith(newBuffer);
+
 
     juce::Array<played_note> new_notes{};
 
@@ -424,7 +444,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             // if the note happens right at the end of the buffer, weird things happen.
             // So, don't play it now, wait for the next buffer.
             if (offset < numSamples - 2) {
-                auto msg = maybe_play_note(offset, notes_changed, scheduled_notes_[0].slot_number, scheduled_notes_[0].start );
+                auto msg = maybe_play_note(notes_changed, scheduled_notes_[0].slot_number, scheduled_notes_[0].start );
                 if (msg) {
                     midiBuffer.addEvent(*msg, offset);
                 }
@@ -445,6 +465,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     }
 #endif
 
+    last_block_call_ = juce::Time::currentTimeMillis();
 
 }
 

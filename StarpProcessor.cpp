@@ -5,6 +5,8 @@
 #include <iomanip>
 #include <cmath>
 
+extern juce::FileLogger *dbgout = nullptr;
+
 speed_value speed_parameter_values[] = {
     speed_value{"1/16", 0.25},
     speed_value{"1/8" , 0.50},
@@ -12,9 +14,9 @@ speed_value speed_parameter_values[] = {
     speed_value{"1/2" , 2.0 },
 };
 
-constexpr int default_speed = 2;
+constexpr int default_speed = Speed::Quarter;
 
-constexpr int default_algo_index = 0; // UpAlgorithm
+constexpr int default_algo_index = Algorithm::Random;
 
 //============================================================================
 // PLAYED_NOTE methods
@@ -40,14 +42,8 @@ StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
     juce::Random rng{};
     random_key_ = rng.nextInt64();
 
-    // Set up the Audio Parameters
-    addParameter(algorithm_parm = new juce::AudioParameterChoice({"algorithm", 3}, "Algorithm", {"up", "down", "random"}, default_algo_index));
 
-    juce::StringArray choices;
-    for (auto const &v : speed_parameter_values) {
-        choices.add(v.name);
-    }
-    speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", choices, default_speed);
+    speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", SpeedChoices, default_speed);
     addParameter(speed);
 
     addParameter(probability    = new juce::AudioParameterInt({"probability", 4}, "Probability", 0, 100, 100));
@@ -57,10 +53,10 @@ StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
     addParameter(timing_delay   = new juce::AudioParameterFloat({ "timing_delay", 7 },   "Delay",    0.0, 30.0, 0.0));
     addParameter(timing_advance = new juce::AudioParameterFloat({ "timing_advance", 8 }, "Advance", -30.0, 0.0, 0.0));
 
-    current_algo_index = -1;
+    algo_index = Algorithm::Random;
 
 #if STARP_DEBUG
-    dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "----V500---");
+    dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "----V1---");
 #endif
 
 }
@@ -77,9 +73,8 @@ StarpProcessor::~StarpProcessor() {
 //============================================================================
 void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
 
-#if STARP_DEBUG
-    dbgout->logMessage("GET STATE called");
-#endif
+    DBGLOG("GET STATE called");
+
     std::stringstream hash;
 
     hash << std::hex << random_key_;
@@ -87,7 +82,7 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
     std::unique_ptr<juce::XmlElement> xml (new juce::XmlElement ("StarpStateInfo"));
     xml->setAttribute ("version", (int) 1);
     xml->setAttribute ("speed", (int) *speed);
-    xml->setAttribute ("algorithm", (int) *algorithm_parm);
+    xml->setAttribute ("algorithm", (int) algo_index);
     xml->setAttribute ("gate", *gate); 
     xml->setAttribute("key", juce::String{random_key_});
     xml->setAttribute("velocity", *velocity);
@@ -96,27 +91,21 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
     xml->setAttribute("delay", *timing_delay);
     xml->setAttribute("advance", *timing_advance);
 
-#if STARP_DEBUG
-    dbgout->logMessage(xml->toString());
-#endif
+    DBGLOG(xml->toString());
     copyXmlToBinary (*xml, destData);
 
 }
 
 void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
-#if STARP_DEBUG
-    dbgout->logMessage("SET STATE called");
-#endif
+    DBGLOG("SET STATE called");
 
     std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 
     if (xmlState.get() != nullptr) {
         if (xmlState->hasTagName ("StarpStateInfo"))  {
-#if STARP_DEBUG
-            dbgout->logMessage(xmlState->toString());
-#endif
+            DBGLOG(xmlState->toString());
             *speed          = xmlState->getIntAttribute("speed", 2);
-            *algorithm_parm = xmlState->getIntAttribute ("algorithm", 0);
+            algo_index      = xmlState->getIntAttribute ("algorithm", 0);
             *gate           = (float) xmlState->getDoubleAttribute ("gate", 100.0);
             *velocity       = xmlState->getIntAttribute("velocity", 100);
             *velo_range     = xmlState->getIntAttribute("velocity_range", 0);
@@ -137,9 +126,7 @@ void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
 //============================================================================
 void StarpProcessor::prepareToPlay (double sampleRate, int) {
 
-#if STARP_DEBUG
-    dbgout->logMessage("PREPARE called");
-#endif
+    DBGLOG("PREPARE called");
     rate_ = sampleRate;
 
     notes_.clearQuick();
@@ -153,9 +140,7 @@ void StarpProcessor::releaseResources()
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 
-#if STARP_DEBUG
-    dbgout->logMessage("RELEASE called");
-#endif
+    DBGLOG("RELEASE called");
     notes_.clear();
     active_notes_.clear();
 
@@ -163,22 +148,25 @@ void StarpProcessor::releaseResources()
 
 //============================================================================
 void StarpProcessor::reassign_algorithm(int new_algo) {
-    if (new_algo != current_algo_index) {
+    if (new_algo != current_algo_index_) {
+        DBGLOG("Changing to new algorithm # ", new_algo);
         switch (new_algo) {
-            case 0 :
-                algo_ = std::make_unique<UpAlgorithm>(algo_.get());
+            case Algorithm::Random :
+                {
+                    auto *na = new RandomAlgorithm(algo_obj_.get());
+                    na->setKey(random_key_);
+                    na->setDebug(dbgout);
+                    algo_obj_.reset(na);
+                }
                 break;
-            case 1 :
-                algo_ = std::make_unique<DownAlgorithm>(algo_.get());
+            case Algorithm::Up :
+                algo_obj_ = std::make_unique<UpAlgorithm>(algo_obj_.get());
                 break;
-            case 2 :
-                auto *na = new RandomAlgorithm(algo_.get());
-                na->setKey(random_key_);
-                na->setDebug(dbgout);
-                algo_.reset(na);
+            case Algorithm::Down :
+                algo_obj_ = std::make_unique<DownAlgorithm>(algo_obj_.get());
                 break;
         }
-        current_algo_index = new_algo;
+        current_algo_index_ = new_algo;
     }
 
 }
@@ -241,7 +229,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
 
 
     if (notes_.size() == 0) {
-        algo_->reset();
+        algo_obj_->reset();
         return std::nullopt;
     }
 
@@ -253,7 +241,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
 
     std::optional<juce::MidiMessage> retval;
 
-    int new_note = algo_->getNextNote(for_slot, notes_, notes_changed);
+    int new_note = algo_obj_->getNextNote(for_slot, notes_, notes_changed);
     if (new_note >= 0 ) {
         int range = *velo_range;
         int note_velocity = *velocity;
@@ -272,18 +260,10 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
         
         double end_slot = start_pos + getGate();
         active_notes_.add({new_note, end_slot});
-#if STARP_DEBUG
-        {
-            std::stringstream x;
-            x << "--- start " << new_note << " @ " << start_pos << "; end = " << end_slot;
-            dbgout->logMessage(x.str());
-        }
-#endif
+        DBGLOG("--- start ", new_note, " @ ", start_pos, "; end = ", end_slot)
 
-#if STARP_DEBUG
     } else {
-        dbgout->logMessage("--- algo could not find note to start");
-#endif
+        DBGLOG("--- algo could not find note to start");
     }
 
     return retval;
@@ -299,23 +279,21 @@ void StarpProcessor::schedule_note(double current_pos, double slot_number) {
     if (current_pos <= sched_start) {
         next_scheduled_slot_number = slot_number;
         scheduled_notes_.addUsingDefaultSort({slot_number, sched_start});
-#if STARP_DEBUG
-        {
-            std::stringstream x;
-            x << "--- scheduling slot " << slot_number << " @ " << sched_start;
-            dbgout->logMessage(x.str());
-        }
+        DBGLOG("--- scheduling slot ", slot_number, " @ ", sched_start);
     } else  {
-        std::stringstream x;
-        x << "--- tried to scheduling slot " << slot_number << " @ " << sched_start << " but late (" << current_pos << ")";
-        dbgout->logMessage(x.str());
-#endif
-        
+        DBGLOG("--- tried to schedule slot ", slot_number,
+            " @ ", sched_start, " but late (", current_pos,  ")");
     }
 
 }
 
-
+//============================================================================
+void StarpProcessor::reset_data() {
+    next_scheduled_slot_number = -1.0;
+    scheduled_notes_.clearQuick();
+    notes_.clearQuick();
+ 
+}
 //============================================================================
 void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                               juce::MidiBuffer& midiBuffer) {
@@ -325,7 +303,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // however we use the buffer to get timing information
     auto numSamples = buffer.getNumSamples();
 
-    reassign_algorithm(*algorithm_parm);
+    reassign_algorithm(algo_index);
 
     position_data pd = compute_block_position();
 
@@ -336,18 +314,28 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     auto this_call_time = juce::Time::currentTimeMillis();
 
     bool bypassed = false;
+    bool do_cleanup = false;
 
-    if (this_call_time - last_block_call_ > 100)
+    if (this_call_time - last_block_call_ > 100) {
         bypassed = true;
+        do_cleanup = true;
+    }
 
-    if (pd.is_playing != last_play_state || bypassed) {
-#if STARP_DEBUG
-        dbgout->logMessage("--- Play state change");
-#endif
-        next_scheduled_slot_number = -1.0;
-        scheduled_notes_.clearQuick();
-        notes_.clearQuick();
-        last_play_state = pd.is_playing;
+    if (bypassed != last_bypassed_state_) {
+        DBGLOG("--- Bypassed state changed to ", bypassed);
+        last_bypassed_state_ = bypassed;
+    }
+
+    if (pd.is_playing != last_play_state_) {
+        DBGLOG("--- Play state changed to ", pd.is_playing);
+        last_play_state_ = pd.is_playing;
+        do_cleanup = true;
+    }
+
+
+
+    if ( do_cleanup) {
+        reset_data();
     }
 
 #if STARP_DEBUG
@@ -361,6 +349,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 #endif
 
 
+    if (! pd.is_playing) return;
 
     // === Read Midi Messages and update notes_ set
     bool notes_changed = false;
@@ -398,15 +387,14 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         auto end_slot = thisNote.end_slot;
 
         if ( (pd.position_as_slots + slots_in_buffer) > end_slot ) {
-            // This is the number of samples into the buffer where the note should turn off
-            int offset = int((end_slot - pd.position_as_slots) * slotDuration);
-#if STARP_DEBUG
-            {
-                std::stringstream x;
-                x << "stop " << note_value << " @ " << offset;
-                dbgout->logMessage(x.str());
-            }
-#endif
+            // This is the number of samples into the buffer where the note should turn off.
+            // If the arp speed was changed while the note was playing, it is possible that
+            // the offset could be calculated as negative. The jmin is to choose instead to
+            // end it immediately.
+            // Note -- to make this work really correctly, we need to fix the off position
+            // on something other than slots. Say - the "qn" position instead.
+            int offset = juce::jmin(0, int((end_slot - pd.position_as_slots) * slotDuration));
+            DBGLOG("stop ", note_value, " @ ", offset);
             midiBuffer.addEvent(juce::MidiMessage::noteOff (1, note_value), offset);
 
         } else {
@@ -427,25 +415,26 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         schedule_note(pd.position_as_slots, pd.slot_number+ 1.0);
     }
 
-#if STARP_DEBUG
     if (pd.is_playing && scheduled_notes_.size() > 0) {
-        std::stringstream x;
-        x << "; next_sched = " << scheduled_notes_[0].slot_number << "; next_start = " << scheduled_notes_[0].start;
-        dbgout->logMessage(x.str());
-     }
-#endif
+        DBGLOG("-- sched size = ", scheduled_notes_.size(), " next_sched = " , 
+            scheduled_notes_[0].slot_number , "; next_start = ", 
+            scheduled_notes_[0].start);
+    }
 
     while(scheduled_notes_.size() > 0) {
 
+        DBGLOG("-- Spinning on scheduled_notes array")
         if ((pd.position_as_slots + slots_in_buffer) > scheduled_notes_[0].start ) {
             // start a new note
             // This is the number of samples into the buffer where the note should turn on
             int offset = juce::jmax(0, int((scheduled_notes_[0].start - pd.position_as_slots) * double(slotDuration)));
+
             // if the note happens right at the end of the buffer, weird things happen.
             // So, don't play it now, wait for the next buffer.
             if (offset < numSamples - 2) {
                 auto msg = maybe_play_note(notes_changed, scheduled_notes_[0].slot_number, scheduled_notes_[0].start );
                 if (msg) {
+                    DBGLOG("--- Adding msg to buffer at offset ", offset);
                     midiBuffer.addEvent(*msg, offset);
                 }
                 scheduled_notes_.remove(0);
@@ -457,13 +446,9 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
     }
 
-#if STARP_DEBUG
     if (pd.is_playing) {
-        std::stringstream x;
-        x << "END " << "active count " << active_notes_.size();
-        dbgout->logMessage(x.str());
+        DBGLOG("END ", "active count ", active_notes_.size());
     }
-#endif
 
     last_block_call_ = juce::Time::currentTimeMillis();
 
@@ -478,8 +463,8 @@ bool StarpProcessor::hasEditor() const
 }
 
 juce::AudioProcessorEditor* StarpProcessor::createEditor() {
-    //return new AudioPluginAudioProcessorEditor (*this);
-    return new juce::GenericAudioProcessorEditor (*this); 
+    return new StarpEditor (*this);
+    //return new juce::GenericAudioProcessorEditor (*this); 
 }
 
 //============================================================================

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Algorithm.hpp"
+#include "ParamData.hpp"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
@@ -78,20 +79,27 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    //==============================================================================
+    void set_algo_index(int i) { algo_index = i; }
+
+    //==============================================================================
+    // Parameters
+    juce::int64 random_key_ = 0L;
+
+    int algo_index = Algorithm::Random;
+
+    juce::AudioParameterChoice* speed;
+    juce::AudioParameterFloat*  gate;
+
 private:
     //==============================================================================
-    juce::AudioParameterChoice* speed;
-    juce::AudioParameterChoice* algorithm_parm;
-    juce::AudioParameterFloat*  gate;
     juce::AudioParameterInt*    velocity;
     juce::AudioParameterInt*    velo_range;
     juce::AudioParameterInt*    probability;
     juce::AudioParameterFloat*  timing_delay;
     juce::AudioParameterFloat*  timing_advance;
 
-    juce::int64 random_key_ = 0L;
 
-    int current_algo_index = -1;
     double rate_;
 
     juce::SortedSet<int> notes_;
@@ -100,24 +108,27 @@ private:
 
     juce::Array<schedule> scheduled_notes_;
 
-    juce::FileLogger *dbgout = nullptr;
 
-    std::unique_ptr<AlgorithmBase> algo_;
+    std::unique_ptr<AlgorithmBase> algo_obj_;
 
     double next_scheduled_slot_number = -1.0;
 
-    bool last_play_state = false;
+    bool last_play_state_ = false;
+    bool last_bypassed_state_ = false;
 
     double getSpeedFactor();
     double getGate();
 
     long long last_block_call_ = -1;
 
+    int current_algo_index_ = -1;
     void reassign_algorithm(int new_algo);
     const position_data compute_block_position();
     std::optional<juce::MidiMessage>maybe_play_note(bool notes_changed, double for_slot, double start_pos);
 
     void schedule_note(double current_pos, double slot_number);
+
+    void reset_data();
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)

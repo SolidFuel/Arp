@@ -35,23 +35,42 @@ bool operator<(const schedule& lhs, const schedule& rhs) { return lhs.start < rh
 
 
 //============================================================================
+
+StarpProcessor::Parameters::Parameters(StarpProcessor& processor) {
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", SpeedChoices, default_speed);
+    layout.add(std::unique_ptr<juce::RangedAudioParameter>(speed));
+
+    gate = new juce::AudioParameterFloat({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0);
+    layout.add(std::unique_ptr<juce::RangedAudioParameter>(gate));
+
+    probability = new juce::AudioParameterInt({"probability", 4}, "Probability", 0, 100, 100);
+    layout.add(std::unique_ptr<juce::RangedAudioParameter>(probability));
+
+    velocity = new juce::AudioParameterInt({"velocity", 5}, "Velocity", 1, 127, 100);
+    layout.add(std::unique_ptr<juce::RangedAudioParameter>(velocity));
+
+    velo_range = new juce::AudioParameterInt({"velocity_range", 6}, "Vel. Range", 0, 64, 0);
+    layout.add(std::unique_ptr<juce::RangedAudioParameter>(velo_range));
+
+    timing_delay = new juce::AudioParameterFloat({ "timing_delay", 7 }, "Delay", 0.0, 30.0, 0.0);
+    layout.add(std::unique_ptr<juce::RangedAudioParameter>(timing_delay));
+
+    timing_advance = new juce::AudioParameterFloat({ "timing_advance", 8 }, "Advance", -30.0, 0.0, 0.0);
+    layout.add(std::unique_ptr<juce::RangedAudioParameter>(timing_advance));
+
+    apvts = std::unique_ptr<juce::AudioProcessorValueTreeState>(
+        new juce::AudioProcessorValueTreeState(
+        processor, nullptr, "STARP-PARAMETERS", std::move(layout)));
+}
+
     
-StarpProcessor::StarpProcessor() : AudioProcessor (BusesProperties()) {
+StarpProcessor::StarpProcessor() : parameters(*this) {
 
     // Pick a random key
     juce::Random rng{};
     random_key_ = rng.nextInt64();
-
-
-    speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", SpeedChoices, default_speed);
-    addParameter(speed);
-
-    addParameter(probability    = new juce::AudioParameterInt({"probability", 4}, "Probability", 0, 100, 100));
-    addParameter(gate           = new juce::AudioParameterFloat({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0));
-    addParameter(velocity       = new juce::AudioParameterInt({"velocity", 5}, "Velocity", 1, 127, 100));
-    addParameter(velo_range     = new juce::AudioParameterInt({"vel. range", 6}, "Vel. Range", 0, 64, 0));
-    addParameter(timing_delay   = new juce::AudioParameterFloat({ "timing_delay", 7 },   "Delay",    0.0, 30.0, 0.0));
-    addParameter(timing_advance = new juce::AudioParameterFloat({ "timing_advance", 8 }, "Advance", -30.0, 0.0, 0.0));
 
     algo_index = Algorithm::Random;
 
@@ -75,49 +94,22 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
 
     DBGLOG("GET STATE called");
 
-    std::stringstream hash;
-
-    hash << std::hex << random_key_;
-
-    std::unique_ptr<juce::XmlElement> xml (new juce::XmlElement ("StarpStateInfo"));
-    xml->setAttribute ("version", (int) 1);
-    xml->setAttribute ("speed", (int) *speed);
-    xml->setAttribute ("algorithm", (int) algo_index);
-    xml->setAttribute ("gate", *gate); 
-    xml->setAttribute("key", juce::String{random_key_});
-    xml->setAttribute("velocity", *velocity);
-    xml->setAttribute("velocity_range", *velo_range);
-    xml->setAttribute("probability", *probability);
-    xml->setAttribute("delay", *timing_delay);
-    xml->setAttribute("advance", *timing_advance);
-
-    DBGLOG(xml->toString());
-    copyXmlToBinary (*xml, destData);
+    auto state = parameters.apvts->copyState();
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    copyXmlToBinary(*xml, destData);
 
 }
 
 void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
     DBGLOG("SET STATE called");
 
-    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
     if (xmlState.get() != nullptr) {
-        if (xmlState->hasTagName ("StarpStateInfo"))  {
-            DBGLOG(xmlState->toString());
-            *speed          = xmlState->getIntAttribute("speed", 2);
-            algo_index      = xmlState->getIntAttribute ("algorithm", 0);
-            *gate           = (float) xmlState->getDoubleAttribute ("gate", 100.0);
-            *velocity       = xmlState->getIntAttribute("velocity", 100);
-            *velo_range     = xmlState->getIntAttribute("velocity_range", 0);
-            *probability    = xmlState->getIntAttribute("probability", 100);
-            *timing_delay   = (float) xmlState->getDoubleAttribute ("delay", 0.0);
-            *timing_advance = (float) xmlState->getDoubleAttribute ("advance", 0.0);
-
-            if (xmlState->hasAttribute("key")) {
-                random_key_ = xmlState->getStringAttribute("key", "-42").getLargeIntValue();
-            }
+        if (xmlState->hasTagName(parameters.apvts->state.getType())) {
+            parameters.apvts->replaceState(juce::ValueTree::fromXml(*xmlState));
         }
-    }
+    }  
 }
 
 
@@ -233,7 +225,8 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
         return std::nullopt;
     }
 
-    int note_prob = *probability;
+    int note_prob = parameters.probability->get();
+
     HashRandom prob_rng{"Probability", random_key_, for_slot};
     if (prob_rng.nextInt(0, 101) > note_prob ) {
         return std::nullopt;
@@ -243,10 +236,13 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
 
     int new_note = algo_obj_->getNextNote(for_slot, notes_, notes_changed);
     if (new_note >= 0 ) {
-        int range = *velo_range;
-        int note_velocity = *velocity;
+
+        int range = parameters.velo_range->get();
+        int note_velocity = parameters.velocity->get();
+
         if (range > 0)  {
             HashRandom vel_rng{"Velocity", random_key_, for_slot};
+
 
             int max = juce::jmin(128, note_velocity + range); 
             int min = juce::jmax(1, note_velocity - range);
@@ -272,7 +268,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
 void StarpProcessor::schedule_note(double current_pos, double slot_number) {
     HashRandom rng{"Humanize", random_key_, slot_number};
 
-    float variance = rng.nextFloat(*timing_advance, *timing_delay);
+    float variance = rng.nextFloat(parameters.timing_advance->get(), parameters.timing_delay->get());
 
     double sched_start = slot_number + (variance/100.0);
 
@@ -470,11 +466,11 @@ juce::AudioProcessorEditor* StarpProcessor::createEditor() {
 //============================================================================
 
 double StarpProcessor:: getSpeedFactor() {
-    return speed_parameter_values[*speed].multiplier;
+    return speed_parameter_values[parameters.speed->getIndex()].multiplier;
 }
 
 double StarpProcessor::getGate() {
-    return *gate / 100.0;
+    return parameters.gate->get() / 100.0;
 }
 
 //============================================================================

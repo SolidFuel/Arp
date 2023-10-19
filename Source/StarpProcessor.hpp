@@ -3,6 +3,8 @@
 #include "Algorithm.hpp"
 #include "ParamData.hpp"
 
+#include <shared_plugin_helpers/shared_plugin_helpers.h>
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <fstream>
@@ -40,7 +42,7 @@ bool operator==(const schedule& lhs, const schedule& rhs);
 bool operator<(const schedule& lhs, const schedule& rhs);
 
 //==============================================================================
-class StarpProcessor  : public juce::AudioProcessor
+class StarpProcessor  : public PluginHelpers::ProcessorBase
 {
 public:
     //==============================================================================
@@ -69,13 +71,6 @@ public:
     double getTailLengthSeconds() const override { return 0.0; }
 
     //==============================================================================
-    int getNumPrograms() override { return 1; }
-    int getCurrentProgram() override { return 0; }
-    void setCurrentProgram (int) override { }
-    const juce::String getProgramName (int) override { return {}; }
-    void changeProgramName (int, const juce::String&) override {}
-
-    //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
@@ -88,16 +83,28 @@ public:
 
     int algo_index = Algorithm::Random;
 
-    juce::AudioParameterChoice* speed;
-    juce::AudioParameterFloat*  gate;
 
 private:
+
+    struct Parameters
+    {        
+        juce::AudioParameterChoice* speed;
+        juce::AudioParameterFloat*  gate;
+        juce::AudioParameterInt*    velocity;
+        juce::AudioParameterInt*    velo_range;
+        juce::AudioParameterInt*    probability;
+        juce::AudioParameterFloat*  timing_delay;
+        juce::AudioParameterFloat*  timing_advance;
+
+        std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
+
+        Parameters(StarpProcessor& processor);
+
+    };
+
+    Parameters parameters;
+
     //==============================================================================
-    juce::AudioParameterInt*    velocity;
-    juce::AudioParameterInt*    velo_range;
-    juce::AudioParameterInt*    probability;
-    juce::AudioParameterFloat*  timing_delay;
-    juce::AudioParameterFloat*  timing_advance;
 
 
     double rate_;
@@ -129,6 +136,9 @@ private:
     void schedule_note(double current_pos, double slot_number);
 
     void reset_data();
+
+public:
+    Parameters* getParameters() { return &parameters; }
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)

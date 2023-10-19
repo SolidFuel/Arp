@@ -3,73 +3,15 @@
 
 #include "Starp.hpp"
 
-struct AlgoListener : public juce::Value::Listener {
 
-    StarpEditor& e_;
 
-    AlgoListener(StarpEditor& e) :e_{e} {
-
-    }
-    void valueChanged(juce::Value& v) override {
-        e_.processorRef.set_algo_index(v.getValue());
-        e_.resized();
-    DBGLOG("Algorithm value changed = ", int(v.getValue()));
-    }
-};
-
-struct SpeedListener : public juce::Value::Listener {
-
-    StarpEditor& e_;
-
-    SpeedListener(StarpEditor& e) :e_{e} {
-
-    }
-    void valueChanged(juce::Value& v) override {
-        *e_.processorRef.speed = int(v.getValue());
-        DBGLOG("Speed GUI value changed = ", int(v.getValue()));
-    }
-};
-
-struct SpeedParameterListener : public juce::AudioProcessorParameter::Listener {
-
-    StarpEditor& e_;
-
-    SpeedParameterListener(StarpEditor& p) :e_{p} {
-
-    }
-    void parameterValueChanged(int, float newValue) override {
-        DBGLOG("Speed float value = ", newValue);
-        int idx = int(newValue * (SpeedChoices.size()-1));
-        // This conditional is to break a possible endless loop.
-        // When the GUI changes, it changes the processor's value
-        // which will fire this listener.
-        if (idx != int(e_.speed_value_.getValue())) {
-            e_.speed_value_.setValue(idx);
-            DBGLOG("Speed value parameter changed = ", idx);
-        }
-
-    }
-    void parameterGestureChanged(int, bool) override {
-    }
-};
 
 //==============================================================================
 StarpEditor::StarpEditor (StarpProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p) {
+    : AudioProcessorEditor (&p), proc_ (p) {
 
 
-    //==============================================
-    addAndMakeVisible(algorithmChoice_);
-    
-    algo_value_ = AlgorithmIndexes[0];
-    algo_value_.addListener(new AlgoListener(*this));
-
-    //==============================================
-    addAndMakeVisible(speedChoice_);
-
-    speed_value_.setValue(int(*p.speed));
-    speed_value_.addListener(new SpeedListener(*this));
-    p.speed->addListener(new SpeedParameterListener(*this));
+        auto params = p.getParameters()->apvts.get();
     
     //==============================================
     addChildComponent(keyLabel_);
@@ -78,17 +20,38 @@ StarpEditor::StarpEditor (StarpProcessor& p)
     key_value_.setValue(juce::String::toHexString(p.random_key_));
 
     //==============================================
-    addAndMakeVisible(gateSlider_);
-    gateSlider_.setRange(10.0, 200.0, 1.0);
+
+    speedLabel_.setText ("Speed", juce::dontSendNotification);
+    addAndMakeVisible (speedLabel_);
+    addAndMakeVisible(speedSlider_);
+    speedAttachment_.reset (new SliderAttachment (*params, "speed", speedSlider_));
+
+
+    gateLabel_.setText ("Gate %", juce::dontSendNotification);
+    addAndMakeVisible (gateLabel_);
     gateSlider_.setTextValueSuffix("%");
-    gateSlider_.setDoubleClickReturnValue(true, 100.0, juce::ModifierKeys::ctrlModifier);
-    gateSlider_.setValue(*p.gate);
-    gateSlider_.onValueChange = [this] { *processorRef.gate = (float)gateSlider_.getValue();};
+    addAndMakeVisible(gateSlider_);
+    gateAttachment_.reset (new SliderAttachment (*params, "gate", gateSlider_));
+
+    veloLabel_.setText ("Velocity", juce::dontSendNotification);
+    addAndMakeVisible (veloLabel_);
+    addAndMakeVisible(veloSlider_);
+    veloAttachment_.reset (new SliderAttachment (*params, "velocity", veloSlider_));
+
+    veloRangeLabel_.setText ("Velocity Range", juce::dontSendNotification);
+    addAndMakeVisible (veloRangeLabel_);
+    addAndMakeVisible(veloRangeSlider_);
+    veloRangeAttachment_.reset (new SliderAttachment (*params, "velocity_range", veloRangeSlider_));
+
+    probabilityLabel_.setText ("Probability", juce::dontSendNotification);
+    addAndMakeVisible (probabilityLabel_);
+    addAndMakeVisible(probabilitySlider_);
+    probabilityAttachment_.reset (new SliderAttachment (*params, "probability", probabilitySlider_));
 
     //==============================================
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(400, 200);
+    setSize(600, 200);
 }
 
 StarpEditor::~StarpEditor() {
@@ -112,26 +75,27 @@ void StarpEditor::resized() {
     grid.alignItems = juce::Grid::AlignItems::start;
     grid.justifyContent = juce::Grid::JustifyContent::start;
     grid.justifyItems = juce::Grid::JustifyItems::start;
-    grid.templateColumns = { Track (Fr (1)) };
+    grid.templateColumns = { Track (Fr (1)), Track(Fr(5)) };
 
     grid.templateRows.add(Track (Fr (1)));
-    grid.items.add(GridItem(algorithmChoice_));
-
-    if (algo_value_ == Algorithm::Random) {
-        keyLabel_.setVisible(true);
-        grid.templateRows.add(Track (Fr (1)));
-        grid.items.add(GridItem(keyLabel_));
-       
-    } else {
-        keyLabel_.setVisible(false);
-    }
+    grid.items.add(GridItem(speedLabel_));
+    grid.items.add(GridItem(speedSlider_));
 
     grid.templateRows.add(Track (Fr (1)));
-    grid.items.add(GridItem(speedChoice_));
-
-    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(gateLabel_));
     grid.items.add(GridItem(gateSlider_));
 
+    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(probabilityLabel_));
+    grid.items.add(GridItem(probabilitySlider_));
+
+    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(veloLabel_));
+    grid.items.add(GridItem(veloSlider_));
+
+    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(veloRangeLabel_));
+    grid.items.add(GridItem(veloRangeSlider_));
 
 
     grid.performLayout (getLocalBounds());

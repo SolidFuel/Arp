@@ -39,6 +39,11 @@ bool operator<(const schedule& lhs, const schedule& rhs) { return lhs.start < rh
 StarpProcessor::Parameters::Parameters(StarpProcessor& processor) {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
+    // Pick a random key
+    juce::Random rng{};
+    random_key_ = rng.nextInt64();
+
+    // Hosted Parameters
     speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", SpeedChoices, default_speed);
     layout.add(std::unique_ptr<juce::RangedAudioParameter>(speed));
 
@@ -68,9 +73,6 @@ StarpProcessor::Parameters::Parameters(StarpProcessor& processor) {
     
 StarpProcessor::StarpProcessor() : parameters(*this) {
 
-    // Pick a random key
-    juce::Random rng{};
-    random_key_ = rng.nextInt64();
 
     algo_index = Algorithm::Random;
 
@@ -96,6 +98,7 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
 
     auto state = parameters.apvts->copyState();
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    xml->setAttribute("key", juce::String{parameters.random_key_});
     copyXmlToBinary(*xml, destData);
 
 }
@@ -108,6 +111,9 @@ void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
     if (xmlState.get() != nullptr) {
         if (xmlState->hasTagName(parameters.apvts->state.getType())) {
             parameters.apvts->replaceState(juce::ValueTree::fromXml(*xmlState));
+            if (xmlState->hasAttribute("key")) {
+                parameters.random_key_ = xmlState->getStringAttribute("key", "-42").getLargeIntValue();
+            }            
         }
     }  
 }
@@ -146,7 +152,7 @@ void StarpProcessor::reassign_algorithm(int new_algo) {
             case Algorithm::Random :
                 {
                     auto *na = new RandomAlgorithm(algo_obj_.get());
-                    na->setKey(random_key_);
+                    na->setKey(parameters.random_key_);
                     na->setDebug(dbgout);
                     algo_obj_.reset(na);
                 }
@@ -227,7 +233,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
 
     int note_prob = parameters.probability->get();
 
-    HashRandom prob_rng{"Probability", random_key_, for_slot};
+    HashRandom prob_rng{"Probability", parameters.random_key_, for_slot};
     if (prob_rng.nextInt(0, 101) > note_prob ) {
         return std::nullopt;
     }
@@ -241,7 +247,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
         int note_velocity = parameters.velocity->get();
 
         if (range > 0)  {
-            HashRandom vel_rng{"Velocity", random_key_, for_slot};
+            HashRandom vel_rng{"Velocity", parameters.random_key_, for_slot};
 
 
             int max = juce::jmin(128, note_velocity + range); 
@@ -266,7 +272,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
 }
 
 void StarpProcessor::schedule_note(double current_pos, double slot_number) {
-    HashRandom rng{"Humanize", random_key_, slot_number};
+    HashRandom rng{"Humanize", parameters.random_key_, slot_number};
 
     float variance = rng.nextFloat(parameters.timing_advance->get(), parameters.timing_delay->get());
 

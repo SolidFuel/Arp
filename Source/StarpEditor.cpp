@@ -11,47 +11,49 @@ StarpEditor::StarpEditor (StarpProcessor& p)
     : AudioProcessorEditor (&p), proc_ (p) {
 
 
-        auto params = p.getParameters()->apvts.get();
+    auto apvts = p.getParameters()->apvts.get();
     
     //==============================================
-    addChildComponent(keyLabel_);
-    keyLabel_.getTextValue().referTo(key_value_);
+    addAndMakeVisible(keyValueLabel_);
+    keyValueLabel_.getTextValue().referTo(key_value_);
+    key_value_.setValue(juce::String::toHexString(p.getParameters()->random_key_));
+    keyLabel_.setText ("Seed", juce::dontSendNotification);
+    addAndMakeVisible (keyLabel_);
 
-    key_value_.setValue(juce::String::toHexString(p.random_key_));
 
     //==============================================
 
     speedLabel_.setText ("Speed", juce::dontSendNotification);
     addAndMakeVisible (speedLabel_);
     addAndMakeVisible(speedSlider_);
-    speedAttachment_.reset (new SliderAttachment (*params, "speed", speedSlider_));
+    speedAttachment_.reset (new SliderAttachment (*apvts, "speed", speedSlider_));
 
 
     gateLabel_.setText ("Gate %", juce::dontSendNotification);
     addAndMakeVisible (gateLabel_);
     gateSlider_.setTextValueSuffix("%");
     addAndMakeVisible(gateSlider_);
-    gateAttachment_.reset (new SliderAttachment (*params, "gate", gateSlider_));
+    gateAttachment_.reset (new SliderAttachment (*apvts, "gate", gateSlider_));
 
     veloLabel_.setText ("Velocity", juce::dontSendNotification);
     addAndMakeVisible (veloLabel_);
     addAndMakeVisible(veloSlider_);
-    veloAttachment_.reset (new SliderAttachment (*params, "velocity", veloSlider_));
+    veloAttachment_.reset (new SliderAttachment (*apvts, "velocity", veloSlider_));
 
     veloRangeLabel_.setText ("Velocity Range", juce::dontSendNotification);
     addAndMakeVisible (veloRangeLabel_);
     addAndMakeVisible(veloRangeSlider_);
-    veloRangeAttachment_.reset (new SliderAttachment (*params, "velocity_range", veloRangeSlider_));
+    veloRangeAttachment_.reset (new SliderAttachment (*apvts, "velocity_range", veloRangeSlider_));
 
     probabilityLabel_.setText ("Probability", juce::dontSendNotification);
     addAndMakeVisible (probabilityLabel_);
     addAndMakeVisible(probabilitySlider_);
-    probabilityAttachment_.reset (new SliderAttachment (*params, "probability", probabilitySlider_));
+    probabilityAttachment_.reset (new SliderAttachment (*apvts, "probability", probabilitySlider_));
 
     //==============================================
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(600, 200);
+    setSize(600, 250);
 }
 
 StarpEditor::~StarpEditor() {
@@ -76,6 +78,11 @@ void StarpEditor::resized() {
     grid.justifyContent = juce::Grid::JustifyContent::start;
     grid.justifyItems = juce::Grid::JustifyItems::start;
     grid.templateColumns = { Track (Fr (1)), Track(Fr(5)) };
+
+    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(keyLabel_));
+    grid.items.add(GridItem(keyValueLabel_));
+
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(speedLabel_));

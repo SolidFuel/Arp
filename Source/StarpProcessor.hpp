@@ -79,7 +79,6 @@ public:
 
     //==============================================================================
     // Parameters
-    juce::int64 random_key_ = 0L;
 
     int algo_index = Algorithm::Random;
 
@@ -88,6 +87,8 @@ private:
 
     struct Parameters
     {        
+        juce::int64 random_key_ = 0L;
+
         juce::AudioParameterChoice* speed;
         juce::AudioParameterFloat*  gate;
         juce::AudioParameterInt*    velocity;

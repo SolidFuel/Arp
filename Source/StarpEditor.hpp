@@ -34,7 +34,8 @@ private:
         AlgorithmIndexes
     };
 
-    juce::Label keyLabel_{"RandomKeyLabel", "00000000"};
+    juce::Label keyLabel_;
+    juce::Label keyValueLabel_{"RandomKeyLabel", "00000000"};
 
     juce::Label speedLabel_;
     juce::Slider speedSlider_;

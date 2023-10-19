@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(Starp VERSION 0.0.1)
+project(Starp VERSION 0.0.2)
 
 #First, we'll add the CMake folder, in case we'll need to find_package later:
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
@@ -28,7 +28,8 @@ endif()
 #static linking in Windows
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-add_compile_options("$<$<CONFIG:Release>:/Ox>")
+add_compile_options("$<$<CONFIG:Release>:/O2>")
+add_compile_definitions("$<$<CONFIG:Release>:STARP_DEBUG=0>")
 
 #We 'require' that we need juce. If JUCE isn't found, it will revert to what's in
 #CMake/Findjuce.cmake, where you can see how JUCE is brought in/configured

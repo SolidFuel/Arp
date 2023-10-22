@@ -108,15 +108,23 @@ private:
     //==============================================================================
 
 
-    double rate_;
+    // Sample rate
+    double sample_rate_;
 
+    // Set of notes we can choose from if we need
+    // to schedule something.
     juce::SortedSet<int> notes_;
 
+    // Notes we have sent the note-on for but need to wait
+    // to send the note-off
     juce::Array<played_note> active_notes_;
 
+    // Notes we are waiting to send the note-on for.
     juce::Array<schedule> scheduled_notes_;
 
 
+    int current_algo_index_ = -1;
+    void reassign_algorithm(int new_algo);
     std::unique_ptr<AlgorithmBase> algo_obj_;
 
     double next_scheduled_slot_number = -1.0;
@@ -127,10 +135,16 @@ private:
     double getSpeedFactor();
     double getGate();
 
+
+    // Last time in millisecs that processBlock was called.
+    // Used to detect bypass. If we haven't been called in
+    // 100 ms then assume we've been bypassed.
     long long last_block_call_ = -1;
 
-    int current_algo_index_ = -1;
-    void reassign_algorithm(int new_algo);
+    // position when processBlock was last called.
+    // Used to detect looping.
+    double last_position_ = -1;
+
     const position_data compute_block_position();
     std::optional<juce::MidiMessage>maybe_play_note(bool notes_changed, double for_slot, double start_pos);
 

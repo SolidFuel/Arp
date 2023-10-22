@@ -19,29 +19,18 @@ const juce::String ProcessorBase::getName() const
 
 bool ProcessorBase::acceptsMidi() const
 {
-#if JucePlugin_WantsMidiInput
     return true;
-#else
-    return false;
-#endif
 }
 
 bool ProcessorBase::producesMidi() const
 {
-#if JucePlugin_ProducesMidiOutput
     return true;
-#else
-    return false;
-#endif
 }
 
 bool ProcessorBase::isMidiEffect() const
 {
-#if JucePlugin_IsMidiEffect
-    return true;
-#else
+    // WHenever Ableton live starts handling change this to true,
     return false;
-#endif
 }
 
 double ProcessorBase::getTailLengthSeconds() const

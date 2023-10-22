@@ -1,7 +1,7 @@
 #pragma once
 
 #if !defined(STARP_DEBUG)
- #define STARP_DEBUG 0
+ #define STARP_DEBUG 1
 #endif
 
 #include <string>

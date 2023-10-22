@@ -77,7 +77,7 @@ StarpProcessor::StarpProcessor() : parameters(*this) {
     algo_index = Algorithm::Random;
 
 #if STARP_DEBUG
-    dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "----V1---");
+    dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "--------V2--------");
 #endif
 
 }
@@ -125,11 +125,11 @@ void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
 void StarpProcessor::prepareToPlay (double sampleRate, int) {
 
     DBGLOG("PREPARE called");
-    rate_ = sampleRate;
+    sample_rate_ = sampleRate;
+    last_position_ = -1;
+    last_block_call_ = -1;
 
-    notes_.clearQuick();
-    active_notes_.clearQuick();
-    
+    reset_data();
 
 }
 
@@ -217,7 +217,7 @@ const position_data StarpProcessor::compute_block_position() {
         }
     }
 
-    pd.samples_per_qn =  static_cast<int>(std::ceil((rate_ * 60.0) / (bpm * qpb))) ;
+    pd.samples_per_qn =  static_cast<int>(std::ceil((sample_rate_ * 60.0) / (bpm * qpb))) ;
 
     return pd;
 
@@ -294,6 +294,8 @@ void StarpProcessor::reset_data() {
     next_scheduled_slot_number = -1.0;
     scheduled_notes_.clearQuick();
     notes_.clearQuick();
+    active_notes_.clearQuick();
+
  
 }
 //============================================================================
@@ -308,6 +310,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     reassign_algorithm(algo_index);
 
     position_data pd = compute_block_position();
+
 
     double slots_in_buffer = (double(numSamples) / double(pd.samples_per_qn)) / getSpeedFactor();
     
@@ -334,7 +337,14 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         do_cleanup = true;
     }
 
-
+    if (pd.position_as_slots < last_position_) {
+        // we must have looped without stopping.
+        // clear everything and restart. Do we need to send note-offs ?
+        // Assume not for now.
+        DBGLOG("--- LOOPING - resetting data");
+        do_cleanup = true;
+    }
+    last_position_ = pd.position_as_slots;
 
     if ( do_cleanup) {
         reset_data();

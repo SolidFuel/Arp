@@ -37,7 +37,7 @@ jobs:
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -v
 
     - name: Test
       working-directory: ${{github.workspace}}/build
@@ -47,5 +47,5 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{matrix.os}}-vst
-        path: ${{github.workspace}}/build/Starp_artefacts/Release/${{matrix.artifact_path}}
+        path: ${{github.workspace}}/build/Source/Starp_artefacts/Release/${{matrix.artifact_path}}
 

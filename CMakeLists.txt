@@ -30,8 +30,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     #static linking in Windows
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     add_compile_options("$<$<CONFIG:Release>:/O2>")
-else()
-    add_compile_options("$<$<CONFIG:Release>:-O2>")
+    add_compile_options("/Wall")
 endif()
 
 add_compile_definitions("$<$<CONFIG:Release>:STARP_DEBUG=0>")

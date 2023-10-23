@@ -12,7 +12,7 @@ I plan to address this in a future version.
 
 ## Building
 
-Build should work for Windows and Linux (I haven't tested on Linux)
+Build should work for Windows and Linux.
 There is tooling for MacOS, but I don't think it works.
 
 ```sh
@@ -22,13 +22,23 @@ cmake -S. -Bbuild
 cmake --build build
 ```
 
-## Install
+## Install From Release
+
+These instructions assume you are installingfrom the provide release builds.
+If you build it yourself, the instruction will be similar. The needed files
+will under the `${BUILD}/Source/Starp_artefacts/Release/VST3`
 
 ### Windows
-Copy the build results (or the version downloaded) into `C:\Program Files\Common Files\VST3`
+*Note* The release builds only work on 64bit windows.
+
+Unzip the file Starp-win-vx.x.x.zip. Place the resulting `Starp.vst3`
+file into `C:\Program Files\Common Files\VST3`
 
 ### Linux 
-???
+*Note* The release builds only work on x86_64 architecture.
+
+Unzip the file Starp-linux-vx.x.x.zip. Place the resulting `Starp.vst3`
+directory into `~/.vst3`
 
 ### MacOS
 ???
@@ -38,17 +48,17 @@ Copy the build results (or the version downloaded) into `C:\Program Files\Common
 If a DAW does not appear below, it has not been tested.
 
 ### Reaper
-Put it in the Track FX list ahead of the synth. easy-peasy.
+Put it in the Track FX list ahead of the synth.
 
 ### Ableton Live
-Live does not recognize midi-effects. So, to use this, you will need two tracks.
-1. The track with the midi and _Starp_.
+Live does not recognize MIDI effects. So, to use this, you will need two tracks.
+1. The track with the MIDI and _Starp_.
 1. The track with the synth.
 
 Route the MIDI output of the first track to the second.
 
 ### Studio One
-Studio One does not allow you to use 3rd party midi effects in the MIDI slots.
+Studio One does not allow you to use 3rd party MIDI effects in the MIDI slots.
 Set up is similar to Ableton Live
 
 ## Technology

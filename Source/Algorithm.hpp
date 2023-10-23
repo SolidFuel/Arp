@@ -41,7 +41,8 @@ class UpAlgorithm : public AlgorithmBase {
 
     int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
         if (notes.size() > 0) {
-            last_index = (++last_index) % notes.size();
+            last_index += 1;
+            last_index = last_index % notes.size();
             return notes[last_index];
         } else {
             last_index = -1;
@@ -60,7 +61,7 @@ class DownAlgorithm : public AlgorithmBase {
             if (last_index <= 0) {
                 last_index = notes.size();
             }
-            last_index = --last_index;
+            last_index -= 1;
             return notes[last_index];
         } else {
             last_index = -1;

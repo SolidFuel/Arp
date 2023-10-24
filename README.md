@@ -40,6 +40,9 @@ file into `C:\Program Files\Common Files\VST3`
 Unzip the file Starp-linux-vx.x.x.zip. Place the resulting `Starp.vst3`
 directory into `~/.vst3`
 
+This can also be placed in `/usr/local/lib/vst3` for system-wide use.
+You will need superuser privileges to do so.
+
 ### MacOS
 ???
 
@@ -47,7 +50,7 @@ directory into `~/.vst3`
 
 If a DAW does not appear below, it has not been tested.
 
-### Reaper
+### Reaper 6,7
 Put it in the Track FX list ahead of the synth.
 
 ### Ableton Live 11

@@ -314,7 +314,8 @@ void StarpProcessor::reset_data() {
 void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                               juce::MidiBuffer& midiBuffer) {
     // A pure MIDI plugin shouldn't be provided any audio data
-    jassert (buffer.getNumChannels() == 0);
+    // Ableton Live disagrees.
+    // jassert (buffer.getNumChannels() == 0);
 
     // however we use the buffer to get timing information
     auto numSamples = buffer.getNumSamples();

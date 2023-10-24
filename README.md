@@ -55,7 +55,8 @@ Live does not recognize MIDI effects. So, to use this, you will need two tracks.
 1. The track with the MIDI and _Starp_.
 1. The track with the synth.
 
-Route the MIDI output of the first track to the second.
+Set the input of the Synth track to be the track with _Starp_ . In the second
+drop down, choose _Starp_ itself (not Pre FX or Post Fx) as the input.
 
 ### Studio One
 Studio One does not allow you to use 3rd party MIDI effects in the MIDI slots.

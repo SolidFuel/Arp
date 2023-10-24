@@ -10,9 +10,9 @@
  * in the root directory.
  ****/
 
-#include "StarpProcessor.hpp"
-#include "StarpEditor.hpp"
-#include "Starp.hpp"
+#include "../StarpProcessor.hpp"
+#include "../StarpEditor.hpp"
+#include "../Starp.hpp"
 
 #include <iomanip>
 #include <cmath>
@@ -83,25 +83,6 @@ StarpProcessor::Parameters::Parameters(StarpProcessor& processor) {
 }
 
     
-StarpProcessor::StarpProcessor() : parameters(*this) {
-
-
-    algo_index = Algorithm::Random;
-
-#if STARP_DEBUG
-    dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "--------V2--------");
-#endif
-
-}
-
-StarpProcessor::~StarpProcessor() {
-
-    if (dbgout != nullptr) {
-        delete dbgout;
-        dbgout = nullptr;
-    }
-
-}
 
 //============================================================================
 void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
@@ -312,13 +293,18 @@ void StarpProcessor::reset_data() {
 }
 //============================================================================
 void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
-                                              juce::MidiBuffer& midiBuffer) {
-    // A pure MIDI plugin shouldn't be provided any audio data
-    // Ableton Live disagrees.
-    // jassert (buffer.getNumChannels() == 0);
-
-    // however we use the buffer to get timing information
+                                    juce::MidiBuffer& midiBuffer) {
     auto numSamples = buffer.getNumSamples();
+
+    // A pure MIDI plugin shouldn't be provided any audio data
+    // but Ableton Live (and others) can't handle a pure midi effect.
+    // jassert (buffer.getNumChannels() == 0);
+    // In Ableton (and others) we actually have an audio output.
+    // So we need to zero it.
+
+    for (auto i = 0; i < buffer.getNumChannels(); ++i)
+        buffer.clear (i, 0, buffer.getNumSamples());
+
 
     reassign_algorithm(algo_index);
 
@@ -481,18 +467,6 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
 
 //============================================================================
-bool StarpProcessor::hasEditor() const
-{
-    // (change this to false if you choose to not supply an editor)
-    return true;
-}
-
-juce::AudioProcessorEditor* StarpProcessor::createEditor() {
-    return new StarpEditor (*this);
-    //return new juce::GenericAudioProcessorEditor (*this); 
-}
-
-//============================================================================
 
 double StarpProcessor:: getSpeedFactor() {
     return speed_parameter_values[parameters.speed->getIndex()].multiplier;
@@ -502,9 +476,3 @@ double StarpProcessor::getGate() {
     return parameters.gate->get() / 100.0;
 }
 
-//============================================================================
-// This creates new instances of the plugin..
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-{
-    return new StarpProcessor();
-}

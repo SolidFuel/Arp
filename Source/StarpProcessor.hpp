@@ -15,8 +15,6 @@
 #include "Algorithm.hpp"
 #include "ParamData.hpp"
 
-#include <shared_plugin_helpers/shared_plugin_helpers.h>
-
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <fstream>
@@ -54,33 +52,47 @@ bool operator==(const schedule& lhs, const schedule& rhs);
 bool operator<(const schedule& lhs, const schedule& rhs);
 
 //==============================================================================
-class StarpProcessor  : public PluginHelpers::ProcessorBase
+class StarpProcessor  : public juce::AudioProcessor
 {
 public:
     //==============================================================================
+    // These are in setup.cpp
     StarpProcessor();
     ~StarpProcessor() override;
+
+    static juce::AudioProcessor::BusesProperties getDefaultProperties();
+
+    juce::AudioProcessorEditor* createEditor() override;
+    bool hasEditor() const override { return true; };
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-    bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-    using AudioProcessor::processBlock;
 
     //==============================================================================
-    juce::AudioProcessorEditor* createEditor() override;
-    bool hasEditor() const override;
 
     //==============================================================================
+    // These are in setup.cpp
+
+    bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
+
     const juce::String getName() const override {return JucePlugin_Name;}
 
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return true; }
-    bool isMidiEffect() const override { return true; }
+    // depends on the host we are in
+    bool isMidiEffect() const override;
     double getTailLengthSeconds() const override { return 0.0; }
+
+    int getNumPrograms() override { return 1; };
+    int getCurrentProgram() override { return 0; };
+    void setCurrentProgram(int) override {};
+    const juce::String getProgramName(int) override { return {}; };
+    void changeProgramName(int, const juce::String&) override {};
+
 
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
@@ -119,6 +131,10 @@ private:
 
     //==============================================================================
 
+
+    // Used to set other things based on the Host
+    // defined in setup.hpp
+    static juce::PluginHostType host_type;
 
     // Sample rate
     double sample_rate_;

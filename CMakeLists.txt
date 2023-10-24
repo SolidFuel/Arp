@@ -30,7 +30,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     #static linking in Windows
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     add_compile_options("$<$<CONFIG:Release>:/O2>")
-    add_compile_options("/Wall")
 endif()
 
 add_compile_definitions("$<$<CONFIG:Release>:STARP_DEBUG=0>")
@@ -39,8 +38,6 @@ add_compile_definitions("$<$<CONFIG:Release>:STARP_DEBUG=0>")
 #CMake/Findjuce.cmake, where you can see how JUCE is brought in/configured
 find_package(juce REQUIRED)
 
-#adding any custom modules you might have:
-add_subdirectory(Modules)
 add_subdirectory(external)
 
 add_subdirectory(Source)

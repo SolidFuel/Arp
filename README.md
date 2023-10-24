@@ -50,7 +50,7 @@ If a DAW does not appear below, it has not been tested.
 ### Reaper
 Put it in the Track FX list ahead of the synth.
 
-### Ableton Live
+### Ableton Live 11
 Live does not recognize MIDI effects. So, to use this, you will need two tracks.
 1. The track with the MIDI and _Starp_.
 1. The track with the synth.
@@ -60,12 +60,17 @@ drop down, choose _Starp_ itself (not Pre FX or Post Fx) as the input.
 
 ![Live Setup Example](docs/Live-Setup.png)
 
-### Studio One
-Studio One does not allow you to use 3rd party MIDI effects in the MIDI slots.
+### Studio One 6
+Studio One does not allow you to use 3rd party MIDI effects in the Note FX slots.
 Set up is similar to Ableton Live
 
+*Note* Record Arm must be on or the MIDI will not reach the synth.
+Yes, this is painful for no good reason.
+[Go Vote](https://answers.presonus.com/43595/add-support-for-third-party-note-fx) to change this.
+
+![Live Setup Example](docs/StudioOne-setup.png)
+
 ## Technology
-----
 
 - [TinySHA1](https://github.com/mohaps/TinySHA1/)
 - [JUCE](https://juce.com/)

@@ -24,6 +24,7 @@ target_sources(${BaseTargetName} PRIVATE
         HashRandom.cpp
         ParamData.cpp
         StarpEditor.cpp
+        ProcessorParameters.cpp
         StarpProcessor/processing.cpp
         StarpProcessor/setup.cpp
         )

@@ -26,7 +26,6 @@ speed_value speed_parameter_values[] = {
     speed_value{"1/2" , 2.0 },
 };
 
-constexpr int default_speed = Speed::Quarter;
 
 constexpr int default_algo_index = Algorithm::Random;
 
@@ -46,41 +45,6 @@ bool operator==(const schedule& lhs, const schedule& rhs){ return lhs.start == r
 bool operator<(const schedule& lhs, const schedule& rhs) { return lhs.start < rhs.start; }
 
 
-//============================================================================
-
-StarpProcessor::Parameters::Parameters(StarpProcessor& processor) {
-    juce::AudioProcessorValueTreeState::ParameterLayout layout;
-
-    // Pick a random key
-    juce::Random rng{};
-    random_key_ = rng.nextInt64();
-
-    // Hosted Parameters
-    speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", SpeedChoices, default_speed);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(speed));
-
-    gate = new juce::AudioParameterFloat({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(gate));
-
-    probability = new juce::AudioParameterInt({"probability", 4}, "Probability", 0, 100, 100);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(probability));
-
-    velocity = new juce::AudioParameterInt({"velocity", 5}, "Velocity", 1, 127, 100);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(velocity));
-
-    velo_range = new juce::AudioParameterInt({"velocity_range", 6}, "Vel. Range", 0, 64, 0);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(velo_range));
-
-    timing_delay = new juce::AudioParameterFloat({ "timing_delay", 7 }, "Delay", 0.0, 30.0, 0.0);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(timing_delay));
-
-    timing_advance = new juce::AudioParameterFloat({ "timing_advance", 8 }, "Advance", -30.0, 0.0, 0.0);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(timing_advance));
-
-    apvts = std::unique_ptr<juce::AudioProcessorValueTreeState>(
-        new juce::AudioProcessorValueTreeState(
-        processor, nullptr, "STARP-PARAMETERS", std::move(layout)));
-}
 
     
 

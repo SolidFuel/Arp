@@ -23,12 +23,13 @@ StarpEditor::StarpEditor (StarpProcessor& p)
     : AudioProcessorEditor (&p), proc_ (p) {
 
 
-    auto apvts = p.getParameters()->apvts.get();
+    auto params = p.getParameters();
+    auto apvts = params->apvts.get();
     
     //==============================================
     addAndMakeVisible(keyValueLabel_);
     keyValueLabel_.getTextValue().referTo(key_value_);
-    key_value_.setValue(juce::String::toHexString(p.getParameters()->random_key_));
+    key_value_.setValue(juce::String::toHexString(params->random_key_));
     keyLabel_.setText ("Seed", juce::dontSendNotification);
     addAndMakeVisible (keyLabel_);
 

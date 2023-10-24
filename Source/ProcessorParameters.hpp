@@ -1,3 +1,4 @@
+   
 /****
  * Starp - Stable Random Arpeggiator Plugin 
  * Copyright (C) 2023 Mark Hollomon
@@ -12,27 +13,22 @@
 
 #pragma once
 
-#include <juce_core/juce_core.h>
+#include <juce_audio_processors/juce_audio_processors.h>
+ 
+    
+    struct Parameters  {        
+        juce::int64 random_key_ = 0L;
 
-//========================================================================
-enum Algorithm {
-    Random,
-    Up,
-    Down
-};
+        juce::AudioParameterChoice* speed;
+        juce::AudioParameterFloat*  gate;
+        juce::AudioParameterInt*    velocity;
+        juce::AudioParameterInt*    velo_range;
+        juce::AudioParameterInt*    probability;
+        juce::AudioParameterFloat*  timing_delay;
+        juce::AudioParameterFloat*  timing_advance;
 
-extern juce::Array<juce::var> AlgorithmIndexes;
-extern juce::StringArray AlgorithmChoices;
+        std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
 
-//========================================================================
-enum Speed {
-    Sixteenth,
-    Eighth,
-    Quarter,
-    Half
-};
+        Parameters(juce::AudioProcessor& processor);
 
-constexpr int default_speed = Speed::Quarter;
-
-extern juce::Array<juce::var> SpeedIndexes;
-extern juce::StringArray SpeedChoices;
+    };

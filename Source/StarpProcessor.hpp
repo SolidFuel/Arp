@@ -14,6 +14,7 @@
 
 #include "Algorithm.hpp"
 #include "ParamData.hpp"
+#include "ProcessorParameters.hpp"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
@@ -109,23 +110,6 @@ public:
 
 private:
 
-    struct Parameters
-    {        
-        juce::int64 random_key_ = 0L;
-
-        juce::AudioParameterChoice* speed;
-        juce::AudioParameterFloat*  gate;
-        juce::AudioParameterInt*    velocity;
-        juce::AudioParameterInt*    velo_range;
-        juce::AudioParameterInt*    probability;
-        juce::AudioParameterFloat*  timing_delay;
-        juce::AudioParameterFloat*  timing_advance;
-
-        std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
-
-        Parameters(StarpProcessor& processor);
-
-    };
 
     Parameters parameters;
 

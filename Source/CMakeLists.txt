@@ -21,12 +21,18 @@ juce_add_plugin("${BaseTargetName}"
         PRODUCT_NAME "Starp")
 
 target_sources(${BaseTargetName} PRIVATE
-        HashRandom.cpp
+        HashRandom.hpp HashRandom.cpp
         ParamData.cpp
-        StarpEditor.cpp
-        ProcessorParameters.cpp
+        StarpEditor.hpp StarpEditor.cpp
+        EditorComponent/MainComponent.hpp
+        EditorComponent/MainComponent.cpp
+        EditorComponent/HeaderComponent.hpp
+        EditorComponent/HeaderComponent.cpp
+        ProcessorParameters.hpp ProcessorParameters.cpp
+        StarpProcessor.hpp
         StarpProcessor/processing.cpp
         StarpProcessor/setup.cpp
+        EditorComponent/MainComponent.hpp
         )
 
 target_compile_definitions(${BaseTargetName}

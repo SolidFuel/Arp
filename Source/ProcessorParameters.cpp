@@ -17,7 +17,7 @@
 
 //============================================================================
 
-Parameters::Parameters(juce::AudioProcessor& processor) {
+ProcessorParameters::ProcessorParameters(juce::AudioProcessor& processor) {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
     // Pick a random key

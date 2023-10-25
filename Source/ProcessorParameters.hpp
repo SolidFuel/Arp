@@ -16,7 +16,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
  
     
-    struct Parameters  {        
+    struct ProcessorParameters  {        
         juce::int64 random_key_ = 0L;
 
         juce::AudioParameterChoice* speed;
@@ -29,6 +29,6 @@
 
         std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
 
-        Parameters(juce::AudioProcessor& processor);
+        ProcessorParameters(juce::AudioProcessor& processor);
 
     };

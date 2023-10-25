@@ -111,7 +111,7 @@ public:
 private:
 
 
-    Parameters parameters;
+    ProcessorParameters parameters;
 
     //==============================================================================
 
@@ -165,7 +165,7 @@ private:
     void reset_data();
 
 public:
-    Parameters* getParameters() { return &parameters; }
+    ProcessorParameters* getParameters() { return &parameters; }
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)

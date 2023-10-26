@@ -12,7 +12,10 @@
 
 #include "HeaderComponent.hpp"
 
+#include <version.hpp>
+
 const std::string about_text = "      STARP    \n"
+    "Version " + STARP_VERSION + " (" + GIT_HASH + ")\n"
     "Copyright (c) 2023 Mark Hollomon\n"
     "Licensed under GPL 3 (https://opensource.org/license/gpl-3-0/)\n"
     "Source code : https://github.com/mhhollomon/Starp\n"

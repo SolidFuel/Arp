@@ -3,6 +3,19 @@ set (BaseTargetName Starp)
 
 add_compile_definitions("$<$<CONFIG:Release>:STARP_DEBUG=0>")
 
+include(GetGitRevisionDescription)
+
+get_git_head_revision(GIT_REF GIT_HASH)
+
+string(SUBSTRING "${GIT_HASH}" 0 7 GIT_SHORT_HASH )
+
+message("GIT_HASH = " ${GIT_HASH})
+message("GIT_SHORT_HASH = " ${GIT_SHORT_HASH})
+message("GIT_REF = " ${GIT_REF})
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+configure_file(version.hpp.in version.hpp @ONLY)
 
 juce_add_plugin("${BaseTargetName}"
         # VERSION ...                               # Set this if the plugin version is different to the project version

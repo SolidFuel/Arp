@@ -113,8 +113,9 @@ void HeaderComponent::resized() {
     box.alignItems = juce::FlexBox::AlignItems::center;
     box.justifyContent = juce::FlexBox::JustifyContent::flexStart;
 
-    box.items.add(FlexItem(menuButton_).withMinWidth(70.0f).withHeight(float(getHeight()) * 0.5f) );
-    box.items.add(FlexItem(nameLabel_).withMinWidth(330.0f).withHeight(float(getHeight())));
+    box.items.add(FlexItem(menuButton_).withMinWidth(50.0f).withHeight(float(getHeight()) * 0.5f)
+            .withMargin(FlexItem::Margin(0, 0, 0, 10)) );
+    box.items.add(FlexItem(nameLabel_).withMinWidth(400.0f).withHeight(float(getHeight())));
     
 
     box.performLayout(getLocalBounds());

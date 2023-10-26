@@ -47,8 +47,10 @@ void StarpEditor::resized() {
     box.flexDirection = juce::FlexBox::Direction::column;
     box.alignContent = juce::FlexBox::AlignContent::center;
 
-    box.items.add(FlexItem(float(getWidth()), 50.0f, header_component).withMinWidth(10.0f));
-    box.items.add(FlexItem(float(getWidth()), 250.0f, main_component).withMinWidth(10.0f));
+    box.items.add(FlexItem(float(getWidth()), 50.0f, header_component));
+
+    box.items.add(FlexItem(float(getWidth()-10), 250.0f, main_component)
+            .withMargin(FlexItem::Margin(0, 5, 0, 5)));
 
 
     box.performLayout (juce::Rectangle(0, 0, getWidth(), getHeight()));

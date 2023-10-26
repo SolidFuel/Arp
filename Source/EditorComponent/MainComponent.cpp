@@ -55,19 +55,19 @@ MainComponent::MainComponent (ProcessorParameters *params) {
 
     probabilityLabel_.setText ("Probability", juce::dontSendNotification);
     addAndMakeVisible (probabilityLabel_);
-    probabilitySlider_.setTooltip("Chance of a not being generated");
+    probabilitySlider_.setTooltip("Chance of a note being generated");
     addAndMakeVisible(probabilitySlider_);
     probabilityAttachment_.reset (new SliderAttachment (*apvts, "probability", probabilitySlider_));
 
     advanceLabel_.setText ("Timing Advance", juce::dontSendNotification);
     addAndMakeVisible (advanceLabel_);
-    advanceSlider_.setTooltip("Variance in the timing - this sets the possiblity of it being early");
+    advanceSlider_.setTooltip("Variance in the timing - this sets the how much it might be early");
     addAndMakeVisible(advanceSlider_);
     advanceAttachment_.reset (new SliderAttachment (*apvts, "timing_advance", advanceSlider_));
 
     delayLabel_.setText ("Timing Delay", juce::dontSendNotification);
     addAndMakeVisible (delayLabel_);
-    delaySlider_.setTooltip("Variance in the timing - this sets the possiblity of it being late");
+    delaySlider_.setTooltip("Variance in the timing - this sets the how much it might be late");
     addAndMakeVisible(delaySlider_);
     delayAttachment_.reset (new SliderAttachment (*apvts, "timing_delay", delaySlider_));
 

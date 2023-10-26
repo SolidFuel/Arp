@@ -16,7 +16,11 @@
 #include "Starp.hpp"
 
 
-
+constexpr int WIDTH = 600;
+constexpr int HEADER_HEIGHT = 50;
+constexpr int MAIN_HEIGHT = 300;
+constexpr int HEIGHT = HEADER_HEIGHT + MAIN_HEIGHT;
+constexpr int MARGIN = 5;
 
 //==============================================================================
 StarpEditor::StarpEditor (StarpProcessor& p)
@@ -25,7 +29,7 @@ StarpEditor::StarpEditor (StarpProcessor& p)
     addAndMakeVisible(header_component);
     addAndMakeVisible(main_component);
 
-    setSize(600, 300);
+    setSize(WIDTH, HEIGHT);
 }
 
 StarpEditor::~StarpEditor() {
@@ -47,10 +51,10 @@ void StarpEditor::resized() {
     box.flexDirection = juce::FlexBox::Direction::column;
     box.alignContent = juce::FlexBox::AlignContent::center;
 
-    box.items.add(FlexItem(float(getWidth()), 50.0f, header_component));
+    box.items.add(FlexItem(float(WIDTH), float(HEADER_HEIGHT), header_component));
 
-    box.items.add(FlexItem(float(getWidth()-10), 250.0f, main_component)
-            .withMargin(FlexItem::Margin(0, 5, 0, 5)));
+    box.items.add(FlexItem(float(WIDTH-(MARGIN*2)), float(MAIN_HEIGHT), main_component)
+            .withMargin(FlexItem::Margin(0, MARGIN, 0, MARGIN)));
 
 
     box.performLayout (juce::Rectangle(0, 0, getWidth(), getHeight()));

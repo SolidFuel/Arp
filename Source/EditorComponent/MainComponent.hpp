@@ -53,6 +53,14 @@ public:
     juce::Slider veloRangeSlider_;
     std::unique_ptr<SliderAttachment> veloRangeAttachment_;
 
+    juce::Label advanceLabel_;
+    juce::Slider advanceSlider_;
+    std::unique_ptr<SliderAttachment> advanceAttachment_;
+
+    juce::Label delayLabel_;
+    juce::Slider delaySlider_;
+    std::unique_ptr<SliderAttachment> delayAttachment_;
+
 //==========================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

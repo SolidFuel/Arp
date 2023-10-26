@@ -41,7 +41,7 @@ const std::string about_text = "      STARP    \n"
     ;
 
 HeaderComponent::HeaderComponent() {
-    nameLabel_.setText ("  STARP  ", juce::dontSendNotification);
+    nameLabel_.setText ("STARP", juce::dontSendNotification);
     nameLabel_.setFont(juce::Font(32.0f, juce::Font::bold));
     nameLabel_.setJustificationType(juce::Justification::centred);
     addAndMakeVisible (nameLabel_);

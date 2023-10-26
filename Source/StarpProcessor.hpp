@@ -164,6 +164,8 @@ private:
 
     void reset_data();
 
+    juce::SharedResourcePointer<juce::TooltipWindow> tooltipWindow;
+
 public:
     ProcessorParameters* getParameters() { return &parameters; }
 

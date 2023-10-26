@@ -29,6 +29,7 @@ MainComponent::MainComponent (ProcessorParameters *params) {
 
     speedLabel_.setText ("Speed", juce::dontSendNotification);
     addAndMakeVisible (speedLabel_);
+    speedSlider_.setTooltip("How often a note will (possibly) be generated");
     addAndMakeVisible(speedSlider_);
     speedAttachment_.reset (new SliderAttachment (*apvts, "speed", speedSlider_));
 
@@ -36,23 +37,40 @@ MainComponent::MainComponent (ProcessorParameters *params) {
     gateLabel_.setText ("Gate %", juce::dontSendNotification);
     addAndMakeVisible (gateLabel_);
     gateSlider_.setTextValueSuffix("%");
+    gateSlider_.setTooltip("How long the note will be on as a proportion of the speed.");
     addAndMakeVisible(gateSlider_);
     gateAttachment_.reset (new SliderAttachment (*apvts, "gate", gateSlider_));
 
     veloLabel_.setText ("Velocity", juce::dontSendNotification);
     addAndMakeVisible (veloLabel_);
+    veloSlider_.setTooltip("MIDI velocity of the generated note");
     addAndMakeVisible(veloSlider_);
     veloAttachment_.reset (new SliderAttachment (*apvts, "velocity", veloSlider_));
 
     veloRangeLabel_.setText ("Velocity Range", juce::dontSendNotification);
     addAndMakeVisible (veloRangeLabel_);
+    veloRangeSlider_.setTooltip("Range of variance (+/-) of the velocity");
     addAndMakeVisible(veloRangeSlider_);
     veloRangeAttachment_.reset (new SliderAttachment (*apvts, "velocity_range", veloRangeSlider_));
 
     probabilityLabel_.setText ("Probability", juce::dontSendNotification);
     addAndMakeVisible (probabilityLabel_);
+    probabilitySlider_.setTooltip("Chance of a not being generated");
     addAndMakeVisible(probabilitySlider_);
     probabilityAttachment_.reset (new SliderAttachment (*apvts, "probability", probabilitySlider_));
+
+    advanceLabel_.setText ("Timing Advance", juce::dontSendNotification);
+    addAndMakeVisible (advanceLabel_);
+    advanceSlider_.setTooltip("Variance in the timing - this sets the possiblity of it being early");
+    addAndMakeVisible(advanceSlider_);
+    advanceAttachment_.reset (new SliderAttachment (*apvts, "timing_advance", advanceSlider_));
+
+    delayLabel_.setText ("Timing Delay", juce::dontSendNotification);
+    addAndMakeVisible (delayLabel_);
+    delaySlider_.setTooltip("Variance in the timing - this sets the possiblity of it being late");
+    addAndMakeVisible(delaySlider_);
+    delayAttachment_.reset (new SliderAttachment (*apvts, "timing_delay", delaySlider_));
+
 
 }
 
@@ -102,6 +120,13 @@ void MainComponent::resized() {
     grid.items.add(GridItem(veloRangeLabel_));
     grid.items.add(GridItem(veloRangeSlider_));
 
+    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(advanceLabel_));
+    grid.items.add(GridItem(advanceSlider_));
+
+    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(delayLabel_));
+    grid.items.add(GridItem(delaySlider_));
 
     grid.performLayout (getLocalBounds());
     

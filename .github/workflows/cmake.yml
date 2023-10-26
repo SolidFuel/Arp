@@ -14,16 +14,17 @@ jobs:
   build:
     strategy :
       matrix :
-        os : [ windows-latest, macos-latest, ubuntu-latest]
+        os : [ windows-latest, ubuntu-latest]
         include :
           - os : windows-latest
             artifact_path : "Starp.vst3/Contents/x86_64-win"
             file : Starp.vst3
             artifact_name : Starp-win64
-          - os : macos-latest
-            artifact_path : "Starp.vst3/Contents/MacOS"
-            file : Starp
-            artifact_name : Starp-macos
+          # macos is seg faulting when running juce_vst3_helper
+          #- os : macos-latest
+          #  artifact_path : "Starp.vst3/Contents/MacOS"
+          #  file : Starp
+          #  artifact_name : Starp-macos
           - os : ubuntu-latest
             artifact_path : "."
             file : Starp.vst3

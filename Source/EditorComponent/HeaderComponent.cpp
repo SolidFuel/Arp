@@ -10,8 +10,6 @@
  * in the root directory.
  ****/
 
-#pragma once
-
 #include "HeaderComponent.hpp"
 
 const std::string about_text = "      STARP    \n"

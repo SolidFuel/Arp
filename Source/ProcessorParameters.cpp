@@ -10,8 +10,6 @@
  * in the root directory.
  ****/
 
-#pragma once
-
 #include "ProcessorParameters.hpp"
 #include "ParamData.hpp"
 

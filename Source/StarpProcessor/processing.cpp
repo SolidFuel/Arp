@@ -20,10 +20,16 @@
 juce::FileLogger *dbgout = nullptr;
 
 speed_value speed_parameter_values[] = {
-    speed_value{"1/16", 0.25},
-    speed_value{"1/8" , 0.50},
-    speed_value{"1/4" , 1.0 },
-    speed_value{"1/2" , 2.0 },
+    speed_value{"1/16"  , 0.25},
+    speed_value{"1/8t"  , 0.33333333 },
+    speed_value{"1/16d" , 0.375},
+    speed_value{"1/8"   , 0.50},
+    speed_value{"1/4t"  , 0.66666667 },
+    speed_value{"1/8d"  , 0.75},
+    speed_value{"1/4"   , 1.0 },
+    speed_value{"1/2t"  , 1.33333333 },
+    speed_value{"1/4d"  , 1.5 },
+    speed_value{"1/2"   , 2.0 },
 };
 
 

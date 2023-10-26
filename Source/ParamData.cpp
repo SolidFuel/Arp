@@ -31,16 +31,28 @@ juce::StringArray AlgorithmChoices{{
 
 juce::Array<juce::var> SpeedIndexes {{
     juce::var{Speed::Sixteenth},
+    juce::var{Speed::EighthTriplet},
+    juce::var{Speed::SixteenthDotted},
     juce::var{Speed::Eighth},
+    juce::var{Speed::QuarterTriplet},
+    juce::var{Speed::EighthDotted},
     juce::var{Speed::Quarter},
+    juce::var{Speed::HalfTriplet},
+    juce::var{Speed::QuarterDotted},
     juce::var{Speed::Half},
 
 }};
 
 juce::StringArray SpeedChoices{{
     "1/16",
+    "1/8t",
+    "1/16d",
     "1/8",
+    "1/4t",
+    "1/8d",
     "1/4",
+    "1/2t",
+    "1/4d",
     "1/2"
 }};
 

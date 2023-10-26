@@ -1,9 +1,20 @@
+/****
+ * Starp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Mark Hollomon
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the 
+ * Free Software Foundation, either version 3 of the License, or (at your 
+ * option) any later version. This program is distributed in the hope that it 
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the LICENSE file
+ * in the root directory.
+ ****/
+
 #pragma once
 
 #include "Algorithm.hpp"
 #include "ParamData.hpp"
-
-#include <shared_plugin_helpers/shared_plugin_helpers.h>
+#include "ProcessorParameters.hpp"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
@@ -42,33 +53,47 @@ bool operator==(const schedule& lhs, const schedule& rhs);
 bool operator<(const schedule& lhs, const schedule& rhs);
 
 //==============================================================================
-class StarpProcessor  : public PluginHelpers::ProcessorBase
+class StarpProcessor  : public juce::AudioProcessor
 {
 public:
     //==============================================================================
+    // These are in setup.cpp
     StarpProcessor();
     ~StarpProcessor() override;
+
+    static juce::AudioProcessor::BusesProperties getDefaultProperties();
+
+    juce::AudioProcessorEditor* createEditor() override;
+    bool hasEditor() const override { return true; };
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-    bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-    using AudioProcessor::processBlock;
 
     //==============================================================================
-    juce::AudioProcessorEditor* createEditor() override;
-    bool hasEditor() const override;
 
     //==============================================================================
+    // These are in setup.cpp
+
+    bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
+
     const juce::String getName() const override {return JucePlugin_Name;}
 
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return true; }
-    bool isMidiEffect() const override { return true; }
+    // depends on the host we are in
+    bool isMidiEffect() const override;
     double getTailLengthSeconds() const override { return 0.0; }
+
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram(int) override {}
+    const juce::String getProgramName(int) override { return {}; }
+    void changeProgramName(int, const juce::String&) override {}
+
 
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
@@ -85,28 +110,15 @@ public:
 
 private:
 
-    struct Parameters
-    {        
-        juce::int64 random_key_ = 0L;
 
-        juce::AudioParameterChoice* speed;
-        juce::AudioParameterFloat*  gate;
-        juce::AudioParameterInt*    velocity;
-        juce::AudioParameterInt*    velo_range;
-        juce::AudioParameterInt*    probability;
-        juce::AudioParameterFloat*  timing_delay;
-        juce::AudioParameterFloat*  timing_advance;
-
-        std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
-
-        Parameters(StarpProcessor& processor);
-
-    };
-
-    Parameters parameters;
+    ProcessorParameters parameters;
 
     //==============================================================================
 
+
+    // Used to set other things based on the Host
+    // defined in setup.hpp
+    static juce::PluginHostType host_type;
 
     // Sample rate
     double sample_rate_;
@@ -153,7 +165,7 @@ private:
     void reset_data();
 
 public:
-    Parameters* getParameters() { return &parameters; }
+    ProcessorParameters* getParameters() { return &parameters; }
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)

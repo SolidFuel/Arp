@@ -1,3 +1,15 @@
+/****
+ * Starp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Mark Hollomon
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the 
+ * Free Software Foundation, either version 3 of the License, or (at your 
+ * option) any later version. This program is distributed in the hope that it 
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the LICENSE file
+ * in the root directory.
+ ****/
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "HashRandom.hpp"
@@ -29,7 +41,8 @@ class UpAlgorithm : public AlgorithmBase {
 
     int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
         if (notes.size() > 0) {
-            last_index = (++last_index) % notes.size();
+            last_index += 1;
+            last_index = last_index % notes.size();
             return notes[last_index];
         } else {
             last_index = -1;
@@ -48,7 +61,7 @@ class DownAlgorithm : public AlgorithmBase {
             if (last_index <= 0) {
                 last_index = notes.size();
             }
-            last_index = --last_index;
+            last_index -= 1;
             return notes[last_index];
         } else {
             last_index = -1;

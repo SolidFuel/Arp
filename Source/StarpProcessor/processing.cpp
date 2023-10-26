@@ -1,20 +1,37 @@
-#include "StarpProcessor.hpp"
-#include "StarpEditor.hpp"
-#include "Starp.hpp"
+/****
+ * Starp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Mark Hollomon
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the 
+ * Free Software Foundation, either version 3 of the License, or (at your 
+ * option) any later version. This program is distributed in the hope that it 
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the LICENSE file
+ * in the root directory.
+ ****/
+
+#include "../StarpProcessor.hpp"
+#include "../StarpEditor.hpp"
+#include "../Starp.hpp"
 
 #include <iomanip>
 #include <cmath>
 
-extern juce::FileLogger *dbgout = nullptr;
+juce::FileLogger *dbgout = nullptr;
 
 speed_value speed_parameter_values[] = {
-    speed_value{"1/16", 0.25},
-    speed_value{"1/8" , 0.50},
-    speed_value{"1/4" , 1.0 },
-    speed_value{"1/2" , 2.0 },
+    speed_value{"1/16"  , 0.25},
+    speed_value{"1/8t"  , 0.33333333 },
+    speed_value{"1/16d" , 0.375},
+    speed_value{"1/8"   , 0.50},
+    speed_value{"1/4t"  , 0.66666667 },
+    speed_value{"1/8d"  , 0.75},
+    speed_value{"1/4"   , 1.0 },
+    speed_value{"1/2t"  , 1.33333333 },
+    speed_value{"1/4d"  , 1.5 },
+    speed_value{"1/2"   , 2.0 },
 };
 
-constexpr int default_speed = Speed::Quarter;
 
 constexpr int default_algo_index = Algorithm::Random;
 
@@ -34,62 +51,8 @@ bool operator==(const schedule& lhs, const schedule& rhs){ return lhs.start == r
 bool operator<(const schedule& lhs, const schedule& rhs) { return lhs.start < rhs.start; }
 
 
-//============================================================================
-
-StarpProcessor::Parameters::Parameters(StarpProcessor& processor) {
-    juce::AudioProcessorValueTreeState::ParameterLayout layout;
-
-    // Pick a random key
-    juce::Random rng{};
-    random_key_ = rng.nextInt64();
-
-    // Hosted Parameters
-    speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", SpeedChoices, default_speed);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(speed));
-
-    gate = new juce::AudioParameterFloat({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(gate));
-
-    probability = new juce::AudioParameterInt({"probability", 4}, "Probability", 0, 100, 100);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(probability));
-
-    velocity = new juce::AudioParameterInt({"velocity", 5}, "Velocity", 1, 127, 100);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(velocity));
-
-    velo_range = new juce::AudioParameterInt({"velocity_range", 6}, "Vel. Range", 0, 64, 0);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(velo_range));
-
-    timing_delay = new juce::AudioParameterFloat({ "timing_delay", 7 }, "Delay", 0.0, 30.0, 0.0);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(timing_delay));
-
-    timing_advance = new juce::AudioParameterFloat({ "timing_advance", 8 }, "Advance", -30.0, 0.0, 0.0);
-    layout.add(std::unique_ptr<juce::RangedAudioParameter>(timing_advance));
-
-    apvts = std::unique_ptr<juce::AudioProcessorValueTreeState>(
-        new juce::AudioProcessorValueTreeState(
-        processor, nullptr, "STARP-PARAMETERS", std::move(layout)));
-}
 
     
-StarpProcessor::StarpProcessor() : parameters(*this) {
-
-
-    algo_index = Algorithm::Random;
-
-#if STARP_DEBUG
-    dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "--------V2--------");
-#endif
-
-}
-
-StarpProcessor::~StarpProcessor() {
-
-    if (dbgout != nullptr) {
-        delete dbgout;
-        dbgout = nullptr;
-    }
-
-}
 
 //============================================================================
 void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
@@ -300,12 +263,18 @@ void StarpProcessor::reset_data() {
 }
 //============================================================================
 void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
-                                              juce::MidiBuffer& midiBuffer) {
-    // A pure MIDI plugin shouldn't be provided any audio data
-    jassert (buffer.getNumChannels() == 0);
-
-    // however we use the buffer to get timing information
+                                    juce::MidiBuffer& midiBuffer) {
     auto numSamples = buffer.getNumSamples();
+
+    // A pure MIDI plugin shouldn't be provided any audio data
+    // but Ableton Live (and others) can't handle a pure midi effect.
+    // jassert (buffer.getNumChannels() == 0);
+    // In Ableton (and others) we actually have an audio output.
+    // So we need to zero it.
+
+    for (auto i = 0; i < buffer.getNumChannels(); ++i)
+        buffer.clear (i, 0, buffer.getNumSamples());
+
 
     reassign_algorithm(algo_index);
 
@@ -468,18 +437,6 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
 
 //============================================================================
-bool StarpProcessor::hasEditor() const
-{
-    // (change this to false if you choose to not supply an editor)
-    return true;
-}
-
-juce::AudioProcessorEditor* StarpProcessor::createEditor() {
-    return new StarpEditor (*this);
-    //return new juce::GenericAudioProcessorEditor (*this); 
-}
-
-//============================================================================
 
 double StarpProcessor:: getSpeedFactor() {
     return speed_parameter_values[parameters.speed->getIndex()].multiplier;
@@ -489,9 +446,3 @@ double StarpProcessor::getGate() {
     return parameters.gate->get() / 100.0;
 }
 
-//============================================================================
-// This creates new instances of the plugin..
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-{
-    return new StarpProcessor();
-}

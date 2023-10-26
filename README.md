@@ -12,7 +12,7 @@ I plan to address this in a future version.
 
 ## Building
 
-Build should work for Windows and Linux (I haven't tested on Linux)
+Build should work for Windows and Linux.
 There is tooling for MacOS, but I don't think it works.
 
 ```sh
@@ -22,13 +22,26 @@ cmake -S. -Bbuild
 cmake --build build
 ```
 
-## Install
+## Install From Release
+
+These instructions assume you are installingfrom the provide release builds.
+If you build it yourself, the instruction will be similar. The needed files
+will under the `${BUILD}/Source/Starp_artefacts/Release/VST3`
 
 ### Windows
-Copy the build results (or the version downloaded) into `C:\Program Files\Common Files\VST3`
+*Note* The release builds only work on 64bit windows.
+
+Unzip the file Starp-win-vx.x.x.zip. Place the resulting `Starp.vst3`
+file into `C:\Program Files\Common Files\VST3`
 
 ### Linux 
-???
+*Note* The release builds only work on x86_64 architecture.
+
+Unzip the file Starp-linux-vx.x.x.zip. Place the resulting `Starp.vst3`
+directory into `~/.vst3`
+
+This can also be placed in `/usr/local/lib/vst3` for system-wide use.
+You will need superuser privileges to do so.
 
 ### MacOS
 ???
@@ -37,22 +50,30 @@ Copy the build results (or the version downloaded) into `C:\Program Files\Common
 
 If a DAW does not appear below, it has not been tested.
 
-### Reaper
-Put it in the Track FX list ahead of the synth. easy-peasy.
+### Reaper 6,7
+Put it in the Track FX list ahead of the synth.
 
-### Ableton Live
-Live does not recognize midi-effects. So, to use this, you will need two tracks.
-1. The track with the midi and _Starp_.
+### Ableton Live 11
+Live does not recognize MIDI effects. So, to use this, you will need two tracks.
+1. The track with the MIDI and _Starp_.
 1. The track with the synth.
 
-Route the MIDI output of the first track to the second.
+Set the input of the Synth track to be the track with _Starp_ . In the second
+drop down, choose _Starp_ itself (not Pre FX or Post Fx) as the input.
 
-### Studio One
-Studio One does not allow you to use 3rd party midi effects in the MIDI slots.
+![Live Setup Example](docs/Live-Setup.png)
+
+### Studio One 6
+Studio One does not allow you to use 3rd party MIDI effects in the Note FX slots.
 Set up is similar to Ableton Live
 
+*Note* Record Arm must be on or the MIDI will not reach the synth.
+Yes, this is painful for no good reason.
+[Go Vote](https://answers.presonus.com/43595/add-support-for-third-party-note-fx) to change this.
+
+![Live Setup Example](docs/StudioOne-setup.png)
+
 ## Technology
-----
 
 - [TinySHA1](https://github.com/mohaps/TinySHA1/)
 - [JUCE](https://juce.com/)

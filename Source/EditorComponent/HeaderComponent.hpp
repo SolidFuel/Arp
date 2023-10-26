@@ -10,30 +10,27 @@
  * in the root directory.
  ****/
 
-
 #pragma once
 
-#if !defined(STARP_DEBUG)
- #define STARP_DEBUG 1
-#endif
-
-#include <string>
-
-template<typename ...Args>
-std::string concat(Args&&... args) {
-    std::stringstream ss;
-
-    (ss << ... << args);
-
-    return ss.str();
-
-}
+#include <juce_gui_basics/juce_gui_basics.h>
 
 
-extern juce::FileLogger *dbgout;
+class HeaderComponent : public juce::Component {
 
-#if STARP_DEBUG
-    #define DBGLOG(...) dbgout->logMessage(concat(__VA_ARGS__));
-#else
-    #define DBGLOG(...)
-#endif
+public:
+
+    HeaderComponent();
+
+    void paint(juce::Graphics&) override;
+    void resized() override;
+
+private:
+    juce::Label nameLabel_;
+
+    juce::TextButton menuButton_;
+
+    void showMenu_();
+    void processMenu_(int results);
+    void showAboutBox_();
+
+};

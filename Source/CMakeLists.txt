@@ -9,10 +9,10 @@ juce_add_plugin("${BaseTargetName}"
         # ICON_BIG ...                              # ICON_* arguments specify a path to an image file to use as an icon for the Standalone
         # ICON_SMALL ...
         COMPANY_NAME "CodeVamping"
-        IS_SYNTH FALSE
+        IS_SYNTH TRUE
         NEEDS_MIDI_INPUT TRUE
         NEEDS_MIDI_OUTPUT TRUE
-        IS_MIDI_EFFECT TRUE
+        IS_MIDI_EFFECT FALSE
         EDITOR_WANTS_KEYBOARD_FOCUS FALSE
         COPY_PLUGIN_AFTER_BUILD FALSE
         PLUGIN_MANUFACTURER_CODE CVmp
@@ -21,10 +21,19 @@ juce_add_plugin("${BaseTargetName}"
         PRODUCT_NAME "Starp")
 
 target_sources(${BaseTargetName} PRIVATE
-        HashRandom.cpp
+        HashRandom.hpp HashRandom.cpp
         ParamData.cpp
-        StarpEditor.cpp
-        StarpProcessor.cpp)
+        StarpEditor.hpp StarpEditor.cpp
+        EditorComponent/MainComponent.hpp
+        EditorComponent/MainComponent.cpp
+        EditorComponent/HeaderComponent.hpp
+        EditorComponent/HeaderComponent.cpp
+        ProcessorParameters.hpp ProcessorParameters.cpp
+        StarpProcessor.hpp
+        StarpProcessor/processing.cpp
+        StarpProcessor/setup.cpp
+        EditorComponent/MainComponent.hpp
+        )
 
 target_compile_definitions(${BaseTargetName}
         PUBLIC
@@ -35,7 +44,6 @@ target_compile_definitions(${BaseTargetName}
 
 target_link_libraries(${BaseTargetName} PRIVATE
         TinySHA1
-        shared_plugin_helpers
         juce_recommended_config_flags
         juce_recommended_lto_flags
         juce_recommended_warning_flags)

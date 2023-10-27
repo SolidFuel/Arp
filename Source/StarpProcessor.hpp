@@ -37,10 +37,28 @@ bool operator<(const played_note& lhs, const played_note& rhs);
 //============================================================================
 struct position_data {
     double position_as_slots = -1.0;
+    // slot_number is a whole number
+    // slot_number + slot_fraction == position_as_slot
     double slot_fraction = 0.0;
     double slot_number = -1.0;
+
     int samples_per_qn;
     bool is_playing = false;
+
+    void set_position(double new_position) {
+        position_as_slots = new_position;
+
+        slot_number = std::trunc(new_position);
+
+        // how far along in the current slot are we ?
+        slot_fraction = new_position - slot_number;
+        if (slot_fraction < 0.00001) {
+            slot_fraction = 0.0;
+        } else if (slot_fraction > 0.99999 ) {
+            slot_fraction = 0.0;
+        }
+       
+    }
 };
 
 //============================================================================
@@ -142,11 +160,9 @@ private:
     double next_scheduled_slot_number = -1.0;
 
     bool last_play_state_ = false;
-    bool last_bypassed_state_ = false;
 
     double getSpeedFactor();
     double getGate();
-
 
     // Last time in millisecs that processBlock was called.
     // Used to detect bypass. If we haven't been called in
@@ -156,6 +172,8 @@ private:
     // position when processBlock was last called.
     // Used to detect looping.
     double last_position_ = -1;
+
+    double fake_clock_sample_count_ = 0;
 
     const position_data compute_block_position();
     std::optional<juce::MidiMessage>maybe_play_note(bool notes_changed, double for_slot, double start_pos);

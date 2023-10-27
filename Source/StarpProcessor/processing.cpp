@@ -90,7 +90,9 @@ void StarpProcessor::prepareToPlay (double sampleRate, int) {
     DBGLOG("PREPARE called");
     sample_rate_ = sampleRate;
     last_position_ = -1;
-    last_block_call_ = -1;
+
+    // This will finesse the bypass logic so we don't reset again.
+    last_block_call_ = juce::Time::currentTimeMillis();
 
     reset_data();
 
@@ -128,16 +130,22 @@ void StarpProcessor::reassign_algorithm(int new_algo) {
                 break;
         }
         current_algo_index_ = new_algo;
+    } else if (current_algo_index_ == Algorithm::Random) {
+        // Not great that this is done each block,
+        // but not that many cycles I suppose.
+        auto *ra = dynamic_cast<RandomAlgorithm *>(algo_obj_.get());
+        ra->setKey(parameters.random_key_);
     }
 
 }
 
+//============================================================================
 const position_data StarpProcessor::compute_block_position() {
 
     position_data pd{};
 
     double bpm = 120.0;
-    double qpb = 1; // quarter notes per beat
+    double quarter_notes_per_beat = 1;
 
     auto *play_head = getPlayHead();
 
@@ -152,41 +160,31 @@ const position_data StarpProcessor::compute_block_position() {
             }
             auto time_sig = position->getTimeSignature();
             if (time_sig) {
-                qpb = 4.0 / time_sig->denominator;
+                quarter_notes_per_beat = 4.0 / time_sig->denominator;
             }
 
             auto opt_pos_qn = position->getPpqPosition();
             if (opt_pos_qn) {
                 // position in slots
-                pd.position_as_slots = *opt_pos_qn / getSpeedFactor();
-
-                // floor does unexpected things if the number is already integral.
-                // so fake it with rouund.
-                pd.slot_number = std::round(pd.position_as_slots);
-
-                if ( std::abs(pd.slot_number - pd.position_as_slots) < 0.00001) {
-                    pd.position_as_slots = pd.slot_number;
-                } else if (pd.slot_number > pd.position_as_slots) {
-                    pd.slot_number -= 1.0;
-                }
-                // how far along in the current slot are we ?
-                pd.slot_fraction = pd.position_as_slots - pd.slot_number;
-                if (pd.slot_fraction < 0.00001) {
-                    pd.slot_fraction = 0.0;
-                } else if (pd.slot_fraction > 0.99999 ) {
-                    pd.slot_fraction = 0.0;
-                }
+                pd.set_position(*opt_pos_qn / getSpeedFactor());
             }
         }
     }
 
-    pd.samples_per_qn =  static_cast<int>(std::ceil((sample_rate_ * 60.0) / (bpm * qpb))) ;
+    pd.samples_per_qn =  static_cast<int>(std::ceil((sample_rate_ * 60.0) / (bpm * quarter_notes_per_beat)));
+
+    if (! pd.is_playing ) {
+        // need to synthesize the data
+        pd.set_position(fake_clock_sample_count_ / (pd.samples_per_qn * getSpeedFactor()));
+    }
 
     return pd;
 
 }
 
-std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_changed, double for_slot, double start_pos) {
+//============================================================================
+std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(
+    bool notes_changed, double for_slot, double start_pos) {
 
 
     if (notes_.size() == 0) {
@@ -237,7 +235,9 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(bool notes_chan
 void StarpProcessor::schedule_note(double current_pos, double slot_number) {
     HashRandom rng{"Humanize", parameters.random_key_, slot_number};
 
-    float variance = rng.nextFloat(parameters.timing_advance->get(), parameters.timing_delay->get());
+    float variance = rng.nextFloat(
+            parameters.timing_advance->get(),
+            parameters.timing_delay->get());
 
     double sched_start = slot_number + (variance/100.0);
 
@@ -254,13 +254,19 @@ void StarpProcessor::schedule_note(double current_pos, double slot_number) {
 
 //============================================================================
 void StarpProcessor::reset_data() {
+    DBGLOG("   reset_data called");
+
     next_scheduled_slot_number = -1.0;
     scheduled_notes_.clearQuick();
     notes_.clearQuick();
     active_notes_.clearQuick();
+    if (algo_obj_) {
+        algo_obj_->reset();
+    }
 
- 
+    DBGLOG("   reset_data finished"); 
 }
+
 //============================================================================
 void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                     juce::MidiBuffer& midiBuffer) {
@@ -287,17 +293,11 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     auto this_call_time = juce::Time::currentTimeMillis();
 
-    bool bypassed = false;
     bool do_cleanup = false;
 
     if (this_call_time - last_block_call_ > 100) {
-        bypassed = true;
+        DBGLOG("--- Was Bypassed - resetting");
         do_cleanup = true;
-    }
-
-    if (bypassed != last_bypassed_state_) {
-        DBGLOG("--- Bypassed state changed to ", bypassed);
-        last_bypassed_state_ = bypassed;
     }
 
     if (pd.is_playing != last_play_state_) {
@@ -329,8 +329,6 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
      }
 #endif
 
-
-    if (! pd.is_playing) return;
 
     // === Read Midi Messages and update notes_ set
     bool notes_changed = false;
@@ -388,7 +386,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     active_notes_.addArray(new_notes);
 
     //------------------------------------------------------------------------
-    // Scehdule note if required.
+    // Schedule note if required.
     if (next_scheduled_slot_number < pd.slot_number) {
         schedule_note(pd.position_as_slots, pd.slot_number);
     }
@@ -429,6 +427,13 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     if (pd.is_playing) {
         DBGLOG("END ", "active count ", active_notes_.size());
+    } else if (notes_.isEmpty()) {
+        // if the incoming midi has no notes that are still
+        // playing AND the play head is not moving, then take
+        // this opportunity to reset the fake clock.
+        fake_clock_sample_count_ = 0;
+    } else {
+        fake_clock_sample_count_ += numSamples;
     }
 
     last_block_call_ = juce::Time::currentTimeMillis();

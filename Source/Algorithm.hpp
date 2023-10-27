@@ -88,6 +88,10 @@ public:
         key_ = key;
     }
 
+    juce::int64 getKey() const {
+        return key_;
+    }
+
     void setDebug(juce::FileLogger *logger) {
         dbgout_ = logger;
     }

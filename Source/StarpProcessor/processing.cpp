@@ -233,17 +233,18 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(
     return retval;
 }
 
-void StarpProcessor::schedule_note(double current_pos, double slot_number) {
+void StarpProcessor::schedule_note(double current_pos, double slot_number, bool can_advance) {
     HashRandom rng{"Humanize", parameters.random_key_, slot_number};
 
+    auto advance = parameters.timing_advance->get() * can_advance;
     float variance = rng.nextFloat(
-            parameters.timing_advance->get(),
+            advance,
             parameters.timing_delay->get());
 
     double sched_start = slot_number + (variance/100.0);
 
     if (current_pos <= sched_start) {
-        next_scheduled_slot_number = slot_number;
+        last_scheduled_slot_number = slot_number;
         scheduled_notes_.addUsingDefaultSort({slot_number, sched_start});
         DBGLOG("--- scheduling slot ", slot_number, " @ ", sched_start);
     } else  {
@@ -257,7 +258,7 @@ void StarpProcessor::schedule_note(double current_pos, double slot_number) {
 void StarpProcessor::reset_data() {
     DBGLOG("   reset_data called");
 
-    next_scheduled_slot_number = -1.0;
+    last_scheduled_slot_number = -1.0;
     scheduled_notes_.clearQuick();
     incoming_notes_.clearQuick();
     active_notes_.clearQuick();
@@ -321,7 +322,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     }
 
 #if STARP_DEBUG
-    {
+    if (pd.is_playing || !midiBuffer.isEmpty() || !incoming_notes_.isEmpty() || !active_notes_.isEmpty() ) {
         std::stringstream x;
         x << "START playing = " << pd.is_playing
             << ";\n     pos_as_slots = " << pd.position_as_slots << "; slot_number = " << pd.slot_number
@@ -332,7 +333,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 #endif
 
 
-    // === Read Midi Messages and update notes_ set
+    // === Read Midi Messages and update incoming_notes_ set
     bool notes_changed = false;
 
     juce::MidiBuffer newBuffer;
@@ -356,6 +357,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     midiBuffer.swapWith(newBuffer);
 
+    DBGLOG("    notes_changed = ", notes_changed);
 
     juce::Array<played_note> new_notes{};
 
@@ -389,14 +391,17 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     //------------------------------------------------------------------------
     // Schedule note if required.
-    if (next_scheduled_slot_number < pd.slot_number) {
-        schedule_note(pd.position_as_slots, pd.slot_number);
-    }
-    if ( (pd.slot_fraction > 0.0) &&  next_scheduled_slot_number <= pd.slot_number) {
-        schedule_note(pd.position_as_slots, pd.slot_number+ 1.0);
+    if (! incoming_notes_.isEmpty()) {
+        if (last_scheduled_slot_number < pd.slot_number) {
+            schedule_note(pd.position_as_slots, pd.slot_number, false);
+        }
+        if ( (pd.slot_fraction > 0.0) &&  last_scheduled_slot_number <= pd.slot_number) {
+            schedule_note(pd.position_as_slots, pd.slot_number+ 1.0, true);
+        }
+
     }
 
-    if (pd.is_playing && scheduled_notes_.size() > 0) {
+    if (scheduled_notes_.size() > 0) {
         DBGLOG("-- sched size = ", scheduled_notes_.size(), " next_sched = " , 
             scheduled_notes_[0].slot_number , "; next_start = ", 
             scheduled_notes_[0].start);

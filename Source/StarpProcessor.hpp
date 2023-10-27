@@ -132,7 +132,7 @@ private:
     void reassign_algorithm(int new_algo);
     std::unique_ptr<AlgorithmBase> algo_obj_;
 
-    double next_scheduled_slot_number = -1.0;
+    double last_scheduled_slot_number = -1.0;
 
     bool last_play_state_ = false;
 
@@ -153,7 +153,7 @@ private:
     const position_data compute_block_position();
     std::optional<juce::MidiMessage>maybe_play_note(bool notes_changed, double for_slot, double start_pos);
 
-    void schedule_note(double current_pos, double slot_number);
+    void schedule_note(double current_pos, double slot_number, bool can_advance);
 
     void reset_data();
 

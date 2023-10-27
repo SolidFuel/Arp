@@ -16,6 +16,7 @@
 #include "ParamData.hpp"
 #include "ProcessorParameters.hpp"
 
+#include "position_data.hpp"
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <fstream>
@@ -34,32 +35,6 @@ struct played_note {
 bool operator==(const played_note& lhs, const played_note& rhs);
 bool operator<(const played_note& lhs, const played_note& rhs);
 
-//============================================================================
-struct position_data {
-    double position_as_slots = -1.0;
-    // slot_number is a whole number
-    // slot_number + slot_fraction == position_as_slot
-    double slot_fraction = 0.0;
-    double slot_number = -1.0;
-
-    int samples_per_qn;
-    bool is_playing = false;
-
-    void set_position(double new_position) {
-        position_as_slots = new_position;
-
-        slot_number = std::trunc(new_position);
-
-        // how far along in the current slot are we ?
-        slot_fraction = new_position - slot_number;
-        if (slot_fraction < 0.00001) {
-            slot_fraction = 0.0;
-        } else if (slot_fraction > 0.99999 ) {
-            slot_fraction = 0.0;
-        }
-       
-    }
-};
 
 //============================================================================
 struct schedule {
@@ -143,7 +118,7 @@ private:
 
     // Set of notes we can choose from if we need
     // to schedule something.
-    juce::SortedSet<int> notes_;
+    juce::SortedSet<int> incoming_notes_;
 
     // Notes we have sent the note-on for but need to wait
     // to send the note-off

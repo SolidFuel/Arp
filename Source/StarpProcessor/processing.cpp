@@ -104,7 +104,7 @@ void StarpProcessor::releaseResources()
     // spare memory, etc.
 
     DBGLOG("RELEASE called");
-    notes_.clear();
+    incoming_notes_.clear();
     active_notes_.clear();
 
 }
@@ -166,7 +166,8 @@ const position_data StarpProcessor::compute_block_position() {
             auto opt_pos_qn = position->getPpqPosition();
             if (opt_pos_qn) {
                 // position in slots
-                pd.set_position(*opt_pos_qn / getSpeedFactor());
+                auto pos_in_slots = *opt_pos_qn / getSpeedFactor();
+                pd.set_position(pos_in_slots);
             }
         }
     }
@@ -187,7 +188,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(
     bool notes_changed, double for_slot, double start_pos) {
 
 
-    if (notes_.size() == 0) {
+    if (incoming_notes_.size() == 0) {
         algo_obj_->reset();
         return std::nullopt;
     }
@@ -201,7 +202,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(
 
     std::optional<juce::MidiMessage> retval;
 
-    int new_note = algo_obj_->getNextNote(for_slot, notes_, notes_changed);
+    int new_note = algo_obj_->getNextNote(for_slot, incoming_notes_, notes_changed);
     if (new_note >= 0 ) {
 
         int range = parameters.velo_range->get();
@@ -258,7 +259,7 @@ void StarpProcessor::reset_data() {
 
     next_scheduled_slot_number = -1.0;
     scheduled_notes_.clearQuick();
-    notes_.clearQuick();
+    incoming_notes_.clearQuick();
     active_notes_.clearQuick();
     if (algo_obj_) {
         algo_obj_->reset();
@@ -289,7 +290,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     double slots_in_buffer = (double(numSamples) / double(pd.samples_per_qn)) / getSpeedFactor();
     
-    auto slotDuration = static_cast<int>(std::ceil(double(pd.samples_per_qn) * getSpeedFactor()));
+    auto slot_duration = static_cast<int>(std::ceil(double(pd.samples_per_qn) * getSpeedFactor()));
 
     auto this_call_time = juce::Time::currentTimeMillis();
 
@@ -320,13 +321,14 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     }
 
 #if STARP_DEBUG
-    if (pd.is_playing) {
+    {
         std::stringstream x;
-        x << "START Slots = " << pd.position_as_slots << "; slot_number = " << pd.slot_number << 
-             "; slot_fraction = " << std::setprecision(10) << pd.slot_fraction 
-            << "; gate = " << getGate() << "; slots_in_buffer = " << slots_in_buffer;
+        x << "START playing = " << pd.is_playing
+            << ";\n     pos_as_slots = " << pd.position_as_slots << "; slot_number = " << pd.slot_number
+            << "; slot_fraction = " << std::setprecision(10) << pd.slot_fraction 
+            << ";\n     gate = " << getGate() << "; slots_in_buffer = " << slots_in_buffer;
         dbgout->logMessage(x.str());
-     }
+    }
 #endif
 
 
@@ -338,10 +340,10 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (const auto metadata : midiBuffer)
     {
         const auto msg = metadata.getMessage();
-        if      (msg.isNoteOn())  { notes_.add(msg.getNoteNumber()); notes_changed = true; }
+        if      (msg.isNoteOn())  { incoming_notes_.add(msg.getNoteNumber()); notes_changed = true; }
         else if (msg.isNoteOff()) { 
-            if (notes_.contains(msg.getNoteNumber())) {
-                notes_.removeValue(msg.getNoteNumber());
+            if (incoming_notes_.contains(msg.getNoteNumber())) {
+                incoming_notes_.removeValue(msg.getNoteNumber());
                 notes_changed = true; 
             } else {
                 // if we didn't see the NoteOn assume we were bypassed and put the message back in the buffer.
@@ -372,7 +374,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             // end it immediately.
             // Note -- to make this work really correctly, we need to fix the off position
             // on something other than slots. Say - the "qn" position instead.
-            int offset = juce::jmin(0, int((end_slot - pd.position_as_slots) * slotDuration));
+            int offset = juce::jmin(0, int((end_slot - pd.position_as_slots) * slot_duration));
             DBGLOG("stop ", note_value, " @ ", offset);
             midiBuffer.addEvent(juce::MidiMessage::noteOff (1, note_value), offset);
 
@@ -406,7 +408,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         if ((pd.position_as_slots + slots_in_buffer) > scheduled_notes_[0].start ) {
             // start a new note
             // This is the number of samples into the buffer where the note should turn on
-            int offset = juce::jmax(0, int((scheduled_notes_[0].start - pd.position_as_slots) * double(slotDuration)));
+            int offset = juce::jmax(0, int((scheduled_notes_[0].start - pd.position_as_slots) * double(slot_duration)));
 
             // if the note happens right at the end of the buffer, weird things happen.
             // So, don't play it now, wait for the next buffer.
@@ -427,7 +429,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     if (pd.is_playing) {
         DBGLOG("END ", "active count ", active_notes_.size());
-    } else if (notes_.isEmpty()) {
+    } else if (incoming_notes_.isEmpty()) {
         // if the incoming midi has no notes that are still
         // playing AND the play head is not moving, then take
         // this opportunity to reset the fake clock.

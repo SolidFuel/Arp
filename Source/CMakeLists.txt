@@ -35,7 +35,8 @@ juce_add_plugin("${BaseTargetName}"
 
 target_sources(${BaseTargetName} PRIVATE
         HashRandom.hpp HashRandom.cpp
-        ParamData.cpp
+        position_data.hpp
+        ParamData.hpp ParamData.cpp
         StarpEditor.hpp StarpEditor.cpp
         EditorComponent/MainComponent.hpp
         EditorComponent/MainComponent.cpp

@@ -12,25 +12,28 @@
 
 #pragma once
 
+#include "AlgoChoiceComponent.hpp"
+#include "RandomAlgoOptionsComponent.hpp"
 #include "../ProcessorParameters.hpp"
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 
 using  SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 
-class MainComponent : public juce::Component {
+class MainComponent : public juce::Component, juce::Value::Listener {
+
 
 public:
 
     MainComponent(ProcessorParameters *params);
 
+    void valueChanged(juce::Value &v);
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    juce::Value key_value_;
+private:
 
-    juce::Label keyLabel_;
-    juce::Label keyValueLabel_{"RandomKeyLabel", "00000000"};
+    ProcessorParameters *params_ = nullptr;
 
     juce::Label speedLabel_;
     juce::Slider speedSlider_;
@@ -60,6 +63,9 @@ public:
     juce::Label delayLabel_;
     juce::Slider delaySlider_;
     std::unique_ptr<SliderAttachment> delayAttachment_;
+
+    AlgoChoiceComponent algoComponent_;
+    RandomAlgoOptionsComponent randomComponent_;
 
 //==========================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)

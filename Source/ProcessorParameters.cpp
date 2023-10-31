@@ -18,9 +18,7 @@
 ProcessorParameters::ProcessorParameters(juce::AudioProcessor& processor) {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    // Pick a random key
-    juce::Random rng{};
-    random_key_ = rng.nextInt64();
+    random_parameters.pick_new_key();
 
     // Hosted Parameters
     speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", SpeedChoices, default_speed);

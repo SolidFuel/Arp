@@ -21,6 +21,9 @@
 
 #include <fstream>
 
+#include "ValueListener.hpp"
+
+
 struct speed_value {
     juce::String name;
     double multiplier;
@@ -46,8 +49,8 @@ bool operator==(const schedule& lhs, const schedule& rhs);
 bool operator<(const schedule& lhs, const schedule& rhs);
 
 //==============================================================================
-class StarpProcessor  : public juce::AudioProcessor
-{
+class StarpProcessor  : public juce::AudioProcessor {
+
 public:
     //==============================================================================
     // These are in setup.cpp
@@ -92,15 +95,6 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    //==============================================================================
-    void set_algo_index(int i) { algo_index = i; }
-
-    //==============================================================================
-    // Parameters
-
-    int algo_index = Algorithm::Random;
-
-
 private:
 
 
@@ -128,8 +122,10 @@ private:
     juce::Array<schedule> scheduled_notes_;
 
 
-    int current_algo_index_ = -1;
-    void reassign_algorithm(int new_algo);
+    bool algo_changed = false;
+    bool seed_changed = false;
+    void update_algo_cb();
+    void update_algorithm(int new_algo);
     std::unique_ptr<AlgorithmBase> algo_obj_;
 
     double last_scheduled_slot_number = -1.0;
@@ -158,6 +154,9 @@ private:
     void reset_data();
 
     juce::SharedResourcePointer<juce::TooltipWindow> tooltipWindow;
+
+    ValueListener seed_listener_;
+    ValueListener algo_listener_;
 
 public:
     ProcessorParameters* getParameters() { return &parameters; }

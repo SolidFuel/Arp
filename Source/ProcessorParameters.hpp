@@ -13,12 +13,22 @@
 
 #pragma once
 
+#include "ParamData.hpp"
+#include "Algorithm.hpp"
+
 #include <juce_audio_processors/juce_audio_processors.h>
  
     
-    struct ProcessorParameters  {        
-        juce::int64 random_key_ = 0L;
+    struct ProcessorParameters  {      
 
+        // These are not automatable.  
+        RandomParameters random_parameters;
+        juce::int64 get_random_seed() const { return juce::int64(random_parameters.seed_value.getValue()); }
+
+        juce::Value algorithm_index{juce::var{Algorithm::Random}};
+        int get_algo_index() const { return int(algorithm_index.getValue()); }
+
+        // These are automatable and will live in the Value Tree
         juce::AudioParameterChoice* speed;
         juce::AudioParameterFloat*  gate;
         juce::AudioParameterInt*    velocity;
@@ -30,5 +40,7 @@
         std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
 
         ProcessorParameters(juce::AudioProcessor& processor);
+
+        void pick_new_key();
 
     };

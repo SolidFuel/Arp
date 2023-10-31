@@ -10,9 +10,25 @@
  * in the root directory.
  ****/
 
+#pragma once
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "HashRandom.hpp"
+#include "AlgorithmEnum.hpp"
+
+#include "Starp.hpp"
+
+struct RandomParameters {
+    // Even with the L suffix it uses a 32 bit int. So
+    // need to cast to int64 intentionally.
+    juce::Value seed_value{juce::var{juce::int64{0L}}};
+
+    void pick_new_key() {
+        juce::Random rng{};
+        seed_value = rng.nextInt64();
+    }
+};
 
 class AlgorithmBase {
 
@@ -22,15 +38,14 @@ protected:
 public:
 
     AlgorithmBase() = default;
-    AlgorithmBase(AlgorithmBase *o){
-        if (o != nullptr)
-            last_index = o->last_index;
-    }
+
     virtual int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed)  = 0;
 
     virtual void reset() {
         last_index = -1;
     }
+
+    virtual Algorithm get_algo() const = 0;
 
     virtual ~AlgorithmBase() {}
 
@@ -38,6 +53,8 @@ public:
 
 class UpAlgorithm : public AlgorithmBase {
     using AlgorithmBase::AlgorithmBase;
+
+    Algorithm get_algo() const  { return Algorithm:: Up; }
 
     int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
         if (notes.size() > 0) {
@@ -55,6 +72,8 @@ class UpAlgorithm : public AlgorithmBase {
 class DownAlgorithm : public AlgorithmBase {
     using AlgorithmBase::AlgorithmBase;
 
+    Algorithm get_algo() const { return Algorithm:: Down; }
+
     int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
         if (notes.size() > 0) {
 
@@ -71,8 +90,10 @@ class DownAlgorithm : public AlgorithmBase {
 
 };
 
-class RandomAlgorithm : public AlgorithmBase {
-    using AlgorithmBase::AlgorithmBase;
+class RandomAlgorithm : public AlgorithmBase, juce::Value::Listener {
+
+    // Non owning
+    RandomParameters *p_;
 
     juce::int64 key_;
 
@@ -80,20 +101,21 @@ class RandomAlgorithm : public AlgorithmBase {
 
     int last_note = -1;
 
-    juce::FileLogger *dbgout_ = nullptr;
-
 
 public:
-    void setKey(juce::int64 key) {
-        key_ = key;
+
+    RandomAlgorithm(RandomParameters *p) : p_(p) {
+        key_ = juce::int64(p_->seed_value.getValue());
+        p_->seed_value.addListener(this);
+    }
+
+    void valueChanged(juce::Value &) {
+        DBGLOG("RandomAlgorithm::valueChanged called")
+        key_ = juce::int64(p_->seed_value.getValue());
     }
 
     juce::int64 getKey() const {
         return key_;
-    }
-
-    void setDebug(juce::FileLogger *logger) {
-        dbgout_ = logger;
     }
 
     void reset() override {
@@ -101,6 +123,9 @@ public:
         last_note = -1;
         available_notes.clearQuick();
     }
+
+    Algorithm get_algo() const { return Algorithm:: Random; }
+
 
     int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
 
@@ -113,11 +138,7 @@ public:
         }
 
         int num_notes = available_notes.size();
-        if (dbgout_) {
-            std::stringstream x;
-            x << "available note count = " << num_notes;
-            dbgout_->logMessage(x.str());
-        }
+        DBGLOG("available note count = ", num_notes)
 
         if (num_notes > 0) {
             if (num_notes == 1) {
@@ -134,7 +155,11 @@ public:
         }
     }
 
-    virtual ~RandomAlgorithm() override = default;
+    virtual ~RandomAlgorithm() override {
+        // We don't own the p_, so it might out live us.
+        // explicitly remove the listener.
+        p_->seed_value.removeListener(this);
+    };
 
 private :
     int getRandom(double slot, int note_to_avoid, const juce::SortedSet<int> & notes) {

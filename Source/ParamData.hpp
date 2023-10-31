@@ -14,12 +14,7 @@
 
 #include <juce_core/juce_core.h>
 
-//========================================================================
-enum Algorithm {
-    Random,
-    Up,
-    Down
-};
+#include "AlgorithmEnum.hpp"
 
 extern juce::Array<juce::var> AlgorithmIndexes;
 extern juce::StringArray AlgorithmChoices;

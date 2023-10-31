@@ -11,20 +11,26 @@
  ****/
 
 #include "MainComponent.hpp"
+#include "../Starp.hpp"
 
-MainComponent::MainComponent (ProcessorParameters *params) {
 
+MainComponent::MainComponent (ProcessorParameters *params) : params_(params),
+    randomComponent_(&params->random_parameters) {
 
+    DBGLOG("Setting up MainComponent");
     auto apvts = params->apvts.get();
+
+    algoComponent_.setValue(params->algorithm_index);
+    addAndMakeVisible(algoComponent_);
+    algoComponent_.refresh();
+    algoComponent_.addListener(this);
+    
+    DBGLOG("Setting up MainComponent CHECK 1");
     
     //==============================================
-    addAndMakeVisible(keyValueLabel_);
-    keyValueLabel_.getTextValue().referTo(key_value_);
-    key_value_.setValue(juce::String::toHexString(params->random_key_));
-    keyLabel_.setText ("Seed", juce::dontSendNotification);
-    addAndMakeVisible (keyLabel_);
-
-
+    addAndMakeVisible(randomComponent_);
+    
+    DBGLOG("Setting up MainComponent CHECK 2");
     //==============================================
 
     speedLabel_.setText ("Speed", juce::dontSendNotification);
@@ -74,15 +80,30 @@ MainComponent::MainComponent (ProcessorParameters *params) {
 
 }
 
+void MainComponent::valueChanged(juce::Value &v) { 
+    // Assume its algorithm for now
+    auto algo = int(v.getValue());
+
+    DBGLOG("MainComponent::valueChanged = ", algo)
+
+    randomComponent_.setEnabled(algo == Algorithm::Random);
+
+}
+
+
+
 //==============================================================================
 void MainComponent::paint (juce::Graphics& g) {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
+    DBGLOG("MainComponent::paint called")
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
 }
 
 //==============================================================================
 void MainComponent::resized() {
+
+    DBGLOG("MainComponent::resized called")
     
     juce::Grid grid;
  
@@ -93,40 +114,52 @@ void MainComponent::resized() {
     grid.alignItems = juce::Grid::AlignItems::start;
     grid.justifyContent = juce::Grid::JustifyContent::start;
     grid.justifyItems = juce::Grid::JustifyItems::start;
-    grid.templateColumns = { Track (Fr (1)), Track(Fr(5)) };
+    grid.templateColumns = { Track (Fr (1)), Track(Fr(4)), Track (Fr (1)) };
+
+    //----------------------------------------
+    // Algorithm Choice
+    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(algoComponent_).withArea(GridItem::Span(1), GridItem::Span(3)));
+
+    DBGLOG("MainComponent Algorithm Choice DONE");
+
+    //----------------------------------------
+    // Algorithm Specific Options
 
     grid.templateRows.add(Track (Fr (1)));
-    grid.items.add(GridItem(keyLabel_));
-    grid.items.add(GridItem(keyValueLabel_));
+    grid.items.add(GridItem(randomComponent_).withArea(GridItem::Span(1), GridItem::Span(3)));
 
+    DBGLOG("MainComponent Algorithm Options DONE");
+
+    //----------------------------------------
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(speedLabel_));
-    grid.items.add(GridItem(speedSlider_));
+    grid.items.add(GridItem(speedSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(gateLabel_));
-    grid.items.add(GridItem(gateSlider_));
+    grid.items.add(GridItem(gateSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(probabilityLabel_));
-    grid.items.add(GridItem(probabilitySlider_));
+    grid.items.add(GridItem(probabilitySlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(veloLabel_));
-    grid.items.add(GridItem(veloSlider_));
+    grid.items.add(GridItem(veloSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(veloRangeLabel_));
-    grid.items.add(GridItem(veloRangeSlider_));
+    grid.items.add(GridItem(veloRangeSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(advanceLabel_));
-    grid.items.add(GridItem(advanceSlider_));
+    grid.items.add(GridItem(advanceSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(delayLabel_));
-    grid.items.add(GridItem(delaySlider_));
+    grid.items.add(GridItem(delaySlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.performLayout (getLocalBounds());
     

@@ -18,7 +18,7 @@
 
 constexpr int WIDTH = 600;
 constexpr int HEADER_HEIGHT = 50;
-constexpr int MAIN_HEIGHT = 300;
+constexpr int MAIN_HEIGHT = 340;
 constexpr int HEIGHT = HEADER_HEIGHT + MAIN_HEIGHT;
 constexpr int MARGIN = 5;
 

@@ -10,30 +10,29 @@
  * in the root directory.
  ****/
 
-
 #pragma once
 
-#if !defined(STARP_DEBUG)
- #define STARP_DEBUG 0
-#endif
+#include "../ParamData.hpp"
+#include "../ValueListener.hpp"
+#include <juce_gui_basics/juce_gui_basics.h>
 
-#include <string>
+class AlgoChoiceComponent : public juce::ChoicePropertyComponent {
 
-template<typename ...Args>
-std::string concat(Args&&... args) {
-    std::stringstream ss;
+public :
+    AlgoChoiceComponent();
 
-    (ss << ... << args);
+    
+    virtual void setIndex(int newIndex)	override;
+    virtual int getIndex()	const override;
 
-    return ss.str();
+    void setValue(juce::Value &ptr);
 
-}
+    // Be sure you have called setValue() before calling this.
+    void addListener(juce::Value::Listener *l);
+
+private :    
+    juce::Value value_ptr_;
+    ValueListener listener_;
 
 
-extern juce::FileLogger *dbgout;
-
-#if STARP_DEBUG
-    #define DBGLOG(...) dbgout->logMessage(concat(__VA_ARGS__));
-#else
-    #define DBGLOG(...)
-#endif
+};

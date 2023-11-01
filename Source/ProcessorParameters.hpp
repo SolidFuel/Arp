@@ -24,6 +24,7 @@
         // These are not automatable.  
         RandomParameters random_parameters;
         juce::int64 get_random_seed() const { return juce::int64(random_parameters.seed_value.getValue()); }
+        LinearParameters linear_parameters;
 
         juce::Value algorithm_index{juce::var{Algorithm::Random}};
         int get_algo_index() const { return int(algorithm_index.getValue()); }

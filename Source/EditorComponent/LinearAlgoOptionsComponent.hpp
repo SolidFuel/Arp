@@ -12,31 +12,41 @@
 
 #pragma once
 
-#include "../ParamData.hpp"
+#include "../Algorithm.hpp"
 #include "../ValueListener.hpp"
+
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 
-class AlgoChoiceComponent : public juce::ChoicePropertyComponent {
 
+using  SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
+
+class LinearAlgoOptionsComponent : public juce::Component {
 public :
-    AlgoChoiceComponent();
+    LinearAlgoOptionsComponent(LinearParameters * parms);
 
-    
-    virtual void setIndex(int newIndex)	override;
-    virtual int getIndex()	const override;
+    void paint(juce::Graphics&) override;
+    void resized() override;
 
-    void setValue(juce::Value &ptr);
+    ~LinearAlgoOptionsComponent();
 
-    void refresh() override;
 
-    // Be sure you have called setValue() before calling this.
-    void addListener(juce::Value::Listener *l);
+private :
 
-private :    
-    juce::Value value_ptr_;
-    ValueListener listener_;
+    LinearParameters *params_;
 
-    std::map<int, int> value_map_;
+    juce::TextButton up_button_;
+    juce::TextButton down_button_;
+
+    juce::ToggleButton zigzag_button_;
+
+    ValueListener direction_listener_;
+    ValueListener zigzag_listener_;
+
+    void update_direction();
+    void update_zigzag();
+
+
 
 
 };

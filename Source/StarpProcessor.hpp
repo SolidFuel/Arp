@@ -122,9 +122,7 @@ private:
     juce::Array<schedule> scheduled_notes_;
 
 
-    bool algo_changed = false;
-    bool seed_changed = false;
-    void update_algo_cb();
+    bool algo_changed_ = false;
     void update_algorithm(int new_algo);
     std::unique_ptr<AlgorithmBase> algo_obj_;
 
@@ -153,9 +151,11 @@ private:
 
     void reset_data();
 
+    void parseCurrentXml(const juce::XmlElement * elem);
+    void parseOriginalXml(const juce::XmlElement * elem);
+
     juce::SharedResourcePointer<juce::TooltipWindow> tooltipWindow;
 
-    ValueListener seed_listener_;
     ValueListener algo_listener_;
 
 public:

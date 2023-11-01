@@ -57,7 +57,7 @@ void StarpProcessor::prepareToPlay (double sampleRate, int) {
     DBGLOG("PREPARE called");
     sample_rate_ = sampleRate;
     last_position_ = -1;
-    algo_changed = true;
+    algo_changed_ = true;
 
     // This will finesse the bypass logic so we don't reset again.
     last_block_call_ = juce::Time::currentTimeMillis();
@@ -74,6 +74,7 @@ void StarpProcessor::releaseResources()
     DBGLOG("RELEASE called");
     incoming_notes_.clear();
     active_notes_.clear();
+    scheduled_notes_.clear();
 
 }
 
@@ -84,15 +85,27 @@ void StarpProcessor::update_algorithm(int new_algo) {
 
     if (!algo_obj_ || algo_obj_->get_algo() != new_algo) {
         DBGLOG("Changing to new algorithm # ", new_algo);
+
+        // Up and Down will only show up if setStateInformation is
+        // somehow flawed. But lets be cautions.
         switch (new_algo) {
             case Algorithm::Random :
                 algo_obj_ = std::make_unique<RandomAlgorithm>(&parameters.random_parameters);
                 break;
             case Algorithm::Up :
-                algo_obj_ = std::make_unique<UpAlgorithm>();
+                parameters.linear_parameters.direction = LinearParameters::Direction::Up;
+                parameters.linear_parameters.zigzag = false;
+                parameters.algorithm_index = Algorithm::Linear;
+                algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters.linear_parameters);
                 break;
             case Algorithm::Down :
-                algo_obj_ = std::make_unique<DownAlgorithm>();
+                parameters.linear_parameters.direction = LinearParameters::Direction::Down;
+                parameters.linear_parameters.zigzag = false;
+                parameters.algorithm_index = Algorithm::Linear;
+                algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters.linear_parameters);
+                break;
+            case Algorithm::Linear :
+                algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters.linear_parameters);
                 break;
         }
 
@@ -204,11 +217,14 @@ void StarpProcessor::schedule_note(double current_pos, double slot_number, bool 
 
     double sched_start = slot_number + (variance/100.0);
 
-    if (current_pos <= sched_start) {
+    if (sched_start >= current_pos ) {
         last_scheduled_slot_number = slot_number;
         scheduled_notes_.addUsingDefaultSort({slot_number, sched_start});
         DBGLOG("--- scheduling slot ", slot_number, " @ ", sched_start);
-    } else  {
+    } else if (can_advance) {
+        // try again without advance
+        schedule_note(current_pos, slot_number, false);
+    } else {
         DBGLOG("--- tried to schedule slot ", slot_number,
             " @ ", sched_start, " but late (", current_pos,  ")");
     }
@@ -223,9 +239,6 @@ void StarpProcessor::reset_data() {
     scheduled_notes_.clearQuick();
     incoming_notes_.clearQuick();
     active_notes_.clearQuick();
-    if (algo_obj_) {
-        algo_obj_->reset();
-    }
 
     DBGLOG("   reset_data finished"); 
 }
@@ -241,8 +254,8 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     //DBGLOG("Algo_changed = ", algo_changed);
 
-    if (algo_changed) {
-        algo_changed = false;
+    if (algo_changed_) {
+        algo_changed_ = false;
         update_algorithm(parameters.get_algo_index());
     }
 
@@ -370,7 +383,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         if (last_scheduled_slot_number < pd.slot_number) {
             schedule_note(pd.position_as_slots, pd.slot_number, false);
         }
-        if ( (pd.slot_fraction > 0.0) &&  last_scheduled_slot_number <= pd.slot_number) {
+        if ( (pd.slot_fraction > 0.5) &&  last_scheduled_slot_number <= pd.slot_number) {
             schedule_note(pd.position_as_slots, pd.slot_number+ 1.0, true);
         }
 
@@ -411,8 +424,8 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
 
     if (pd.is_playing) {
-        DBGLOG("END ", "active count ", active_notes_.size());
-    } else if (incoming_notes_.isEmpty()) {
+        DBGLOG("END ", "incoming = ", incoming_notes_.size(), " active count = ", active_notes_.size());
+    } else if (incoming_notes_.isEmpty() && active_notes_.isEmpty()) {
         // if the incoming midi has no notes that are still
         // playing AND the play head is not moving, then take
         // this opportunity to reset the fake clock.

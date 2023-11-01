@@ -20,28 +20,46 @@ AlgoChoiceComponent::AlgoChoiceComponent() :
 
     DBGLOG("Creating Choice Component")
     choices.addArray(AlgorithmChoices);
-    refresh();
-    DBGLOG("We have ", choices.size(), " choices")
-
     listener_.onChange = [this](juce::Value &){ refresh(); };
+
+    for (int i=0; i< AlgorithmIndexes.size(); ++i) {
+        auto k = int(AlgorithmIndexes[i]);
+        DBGLOG("   insert ", k, " => ", i)
+        value_map_.insert({k, i});
+    }
+    refresh();
+    DBGLOG("Creating Choice Component DONE")
 }
 
 void AlgoChoiceComponent::setValue(juce::Value &ptr) {
     DBGLOG("Setting value_ptr_");
     value_ptr_.referTo(ptr);
+    DBGLOG("Setting value_ptr_ adding Listener");
     value_ptr_.addListener(&listener_);
+    DBGLOG("Setting value_ptr_ DONE");
+}
+
+void AlgoChoiceComponent::refresh() {
+    DBGLOG("AlgoChoiceComponent::refresh called")
+    juce::ChoicePropertyComponent::refresh();
 }
 
 void AlgoChoiceComponent::addListener(juce::Value::Listener *l) {
+    DBGLOG("AlgoChoiceComponent::addListener called")
     value_ptr_.addListener(l);
 }
 
 void AlgoChoiceComponent::setIndex(int newIndex) {
-    DBGLOG("SETINDEX called = ", newIndex);
-     value_ptr_.setValue(newIndex);
+    DBGLOG("SETINDEX called = ", newIndex );
+    auto v = int(AlgorithmIndexes[newIndex]);
+    DBGLOG("     => ", v);
+    value_ptr_.setValue(v);
 }
 
 int AlgoChoiceComponent::getIndex()	const {
-    DBGLOG("GETINDEX called = ", int(value_ptr_.getValue()));
-    return int(value_ptr_.getValue());
+    auto v = int(value_ptr_.getValue());
+    DBGLOG("GETINDEX called = ", v);
+    auto i = value_map_.at(v);
+    DBGLOG("    => ", i);
+    return i;
 }

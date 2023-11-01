@@ -16,6 +16,7 @@
 enum Algorithm {
     Random,
     Up,
-    Down
+    Down,
+    Linear
 };
 

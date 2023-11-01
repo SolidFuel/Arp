@@ -16,6 +16,7 @@
 
 #include "HashRandom.hpp"
 #include "AlgorithmEnum.hpp"
+#include "ValueListener.hpp"
 
 #include "Starp.hpp"
 
@@ -30,10 +31,15 @@ struct RandomParameters {
     }
 };
 
-class AlgorithmBase {
+struct LinearParameters {
+    enum Direction { Up, Down };
+    juce::Value direction{Up};
+    int get_direction() const { return int(direction.getValue()); }
+    juce::Value zigzag{juce::var{false}};
+    bool get_zigzag() const { return bool(zigzag.getValue()); }
+};
 
-protected:
-    int last_index = -1;
+class AlgorithmBase {
 
 public:
 
@@ -42,7 +48,6 @@ public:
     virtual int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed)  = 0;
 
     virtual void reset() {
-        last_index = -1;
     }
 
     virtual Algorithm get_algo() const = 0;
@@ -51,43 +56,75 @@ public:
 
 };
 
-class UpAlgorithm : public AlgorithmBase {
-    using AlgorithmBase::AlgorithmBase;
+class LinearAlgorithm : public AlgorithmBase {
 
-    Algorithm get_algo() const  { return Algorithm:: Up; }
+private: 
+    LinearParameters * p_;
 
-    int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
-        if (notes.size() > 0) {
-            last_index += 1;
-            last_index = last_index % notes.size();
-            return notes[last_index];
-        } else {
-            last_index = -1;
-            return -1;
-        }
+    bool zigzag = false;
+    int direction = LinearParameters::Direction::Up;
+
+    ValueListener direction_listener_;
+    ValueListener zigzag_listener_;
+
+    void update_parameters() {
+        DBGLOG("LinearAlgorithm::update_parameters called")
+        zigzag = bool(p_->zigzag.getValue());
+        direction = int(p_->direction.getValue());
     }
 
-};
+public :
+    LinearAlgorithm(LinearParameters * p) : p_{p} {
+        update_parameters();
 
-class DownAlgorithm : public AlgorithmBase {
-    using AlgorithmBase::AlgorithmBase;
+        direction_listener_.onChange = [this](juce::Value &) {
+            update_parameters();
+        };
 
-    Algorithm get_algo() const { return Algorithm:: Down; }
+        p_->direction.addListener(&direction_listener_);
 
-    int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
-        if (notes.size() > 0) {
+        zigzag_listener_.onChange = [this](juce::Value &) {
+            update_parameters();
+        };
 
-            if (last_index <= 0) {
-                last_index = notes.size();
-            }
-            last_index -= 1;
-            return notes[last_index];
-        } else {
-            last_index = -1;
-            return -1;
-        }
+        p_->zigzag.addListener(&zigzag_listener_);
+
     }
 
+    ~LinearAlgorithm() {
+        p_->direction.removeListener(&direction_listener_);
+        p_->zigzag.removeListener(&zigzag_listener_);
+    }
+
+    Algorithm get_algo() const { return Algorithm::Linear; }
+
+    int getNextNote(double slot, const juce::SortedSet<int> &notes, bool) override {
+
+        auto note_count = notes.size();
+
+        if (note_count == 0) {
+            return -1;
+        }
+
+
+        int index = 0;
+
+        if (zigzag) {
+            // -2 because we don't want to repeat the top and bottom.
+            auto cycle_length = 2 * note_count - 2;
+
+            index = int(slot) % cycle_length;
+            index -= (index >= note_count) *(index - note_count +2);
+
+        } else {
+            index = int(slot) % note_count;
+        }
+
+        if (direction == LinearParameters::Direction::Down) {
+            index = note_count - 1 - index;
+        }
+        return notes[index];
+    }
 };
 
 class RandomAlgorithm : public AlgorithmBase, juce::Value::Listener {

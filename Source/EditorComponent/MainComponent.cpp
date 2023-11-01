@@ -15,7 +15,8 @@
 
 
 MainComponent::MainComponent (ProcessorParameters *params) : params_(params),
-    randomComponent_(&params->random_parameters) {
+    randomComponent_(&params->random_parameters),
+    linearComponent_(&params->linear_parameters) {
 
     DBGLOG("Setting up MainComponent");
     auto apvts = params->apvts.get();
@@ -24,13 +25,23 @@ MainComponent::MainComponent (ProcessorParameters *params) : params_(params),
     addAndMakeVisible(algoComponent_);
     algoComponent_.refresh();
     algoComponent_.addListener(this);
+
     
     DBGLOG("Setting up MainComponent CHECK 1");
     
     //==============================================
-    addAndMakeVisible(randomComponent_);
+    addChildComponent(randomComponent_);
     
     DBGLOG("Setting up MainComponent CHECK 2");
+
+    //==============================================
+    addChildComponent(linearComponent_);
+    
+    DBGLOG("Setting up MainComponent CHECK 3");
+
+    // Make sure we are in synch with the current value
+    valueChanged(params->algorithm_index);
+
     //==============================================
 
     speedLabel_.setText ("Speed", juce::dontSendNotification);
@@ -80,13 +91,15 @@ MainComponent::MainComponent (ProcessorParameters *params) : params_(params),
 
 }
 
-void MainComponent::valueChanged(juce::Value &v) { 
-    // Assume its algorithm for now
-    auto algo = int(v.getValue());
+void MainComponent::valueChanged(juce::Value &) { 
+    auto algo = params_->get_algo_index();
 
     DBGLOG("MainComponent::valueChanged = ", algo)
 
-    randomComponent_.setEnabled(algo == Algorithm::Random);
+    randomComponent_.setVisible(algo == Algorithm::Random);
+    linearComponent_.setVisible(algo == Algorithm::Linear);
+
+    resized();
 
 }
 
@@ -127,7 +140,23 @@ void MainComponent::resized() {
     // Algorithm Specific Options
 
     grid.templateRows.add(Track (Fr (1)));
-    grid.items.add(GridItem(randomComponent_).withArea(GridItem::Span(1), GridItem::Span(3)));
+    auto algo = params_->get_algo_index();
+    DBGLOG("algo = ", algo)
+    juce::Component *optionComponent = nullptr;
+    switch (params_->get_algo_index()) {
+        case Algorithm::Random :
+            optionComponent = &randomComponent_;
+            break;
+        case Algorithm::Linear :
+            optionComponent = &linearComponent_;
+            break;
+        default :
+            jassertfalse;
+    }
+
+    jassert(optionComponent != nullptr);
+
+    grid.items.add(GridItem(*optionComponent).withArea(GridItem::Span(1), GridItem::Span(3)));
 
     DBGLOG("MainComponent Algorithm Options DONE");
 

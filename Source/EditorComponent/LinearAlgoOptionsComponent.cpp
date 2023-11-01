@@ -76,12 +76,14 @@ void LinearAlgoOptionsComponent::update_zigzag() {
 //==============================================================
 void LinearAlgoOptionsComponent::paint(juce::Graphics&g) {
     DBGLOG("LinearAlgoOptionsComponent::paint called");
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.fillAll (getLookAndFeel().findColour (juce::PropertyComponent::backgroundColourId));
 
 }
 
 //==========================================================
 void LinearAlgoOptionsComponent::resized() {
+
+    DBGLOG("LinearAlgoOptionsComponent::resized called")
 
     juce::Grid grid;
  

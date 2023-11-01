@@ -54,12 +54,14 @@ void RandomAlgoOptionsComponent::changeKey() {
 //==========================================================
 void RandomAlgoOptionsComponent::paint(juce::Graphics& g) {
     DBGLOG("RandomAlgoOptionsComponent::paint called");
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.fillAll (getLookAndFeel().findColour (juce::PropertyComponent::backgroundColourId));
 
 }
 
 //==========================================================
 void RandomAlgoOptionsComponent::resized() {
+
+    DBGLOG("RandomAlgoOptionsComponent::resized called");
 
     juce::Grid grid;
  

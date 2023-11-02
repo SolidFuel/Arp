@@ -12,32 +12,14 @@
 
 #pragma once
 
-#include <juce_audio_processors/juce_audio_processors.h>
+#include "Starp.hpp"
 
 #include "HashRandom.hpp"
 #include "AlgorithmEnum.hpp"
 #include "ValueListener.hpp"
+#include "AlgorithmParameters.hpp"
+#include <juce_audio_processors/juce_audio_processors.h>
 
-#include "Starp.hpp"
-
-struct RandomParameters {
-    // Even with the L suffix it uses a 32 bit int. So
-    // need to cast to int64 intentionally.
-    juce::Value seed_value{juce::var{juce::int64{0L}}};
-
-    void pick_new_key() {
-        juce::Random rng{};
-        seed_value = rng.nextInt64();
-    }
-};
-
-struct LinearParameters {
-    enum Direction { Up, Down };
-    juce::Value direction{Up};
-    int get_direction() const { return int(direction.getValue()); }
-    juce::Value zigzag{juce::var{false}};
-    bool get_zigzag() const { return bool(zigzag.getValue()); }
-};
 
 class AlgorithmBase {
 
@@ -61,16 +43,22 @@ class LinearAlgorithm : public AlgorithmBase {
 private: 
     LinearParameters * p_;
 
-    bool zigzag = false;
     int direction = LinearParameters::Direction::Up;
+    bool zigzag = false;
+    bool restart = false;
+
+    int clock = 0;
+
 
     ValueListener direction_listener_;
     ValueListener zigzag_listener_;
+    ValueListener restart_listener_;
 
     void update_parameters() {
         DBGLOG("LinearAlgorithm::update_parameters called")
-        zigzag = bool(p_->zigzag.getValue());
-        direction = int(p_->direction.getValue());
+        direction = p_->get_direction();
+        zigzag = p_->get_zigzag();
+        restart = p_->get_restart();
     }
 
 public :
@@ -89,22 +77,37 @@ public :
 
         p_->zigzag.addListener(&zigzag_listener_);
 
+        restart_listener_.onChange = [this](juce::Value &) {
+            update_parameters();
+        };
+
+        p_->restart.addListener(&restart_listener_);
     }
 
     ~LinearAlgorithm() {
         p_->direction.removeListener(&direction_listener_);
         p_->zigzag.removeListener(&zigzag_listener_);
+        p_->restart.removeListener(&restart_listener_);
     }
 
     Algorithm get_algo() const { return Algorithm::Linear; }
 
-    int getNextNote(double slot, const juce::SortedSet<int> &notes, bool) override {
+    int getNextNote(double slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
+
+        DBGLOG("Linear GETNEXTNOTE called slot = ", int(slot), " changed = ", notes_changed)
 
         auto note_count = notes.size();
 
         if (note_count == 0) {
             return -1;
         }
+
+        // reset the clock if notes_changed
+        clock = clock * (1-int(notes_changed));
+
+        clock = restart ? clock : int(slot);
+
+        DBGLOG("   GNN notes = ", note_count," clock = ", clock);
 
 
         int index = 0;
@@ -113,16 +116,19 @@ public :
             // -2 because we don't want to repeat the top and bottom.
             auto cycle_length = 2 * note_count - 2;
 
-            index = int(slot) % cycle_length;
-            index -= (index >= note_count) *(index - note_count +2);
+            index = clock % cycle_length;
+            index -= (index >= note_count) * (index - note_count +2);
 
         } else {
-            index = int(slot) % note_count;
+            index = clock % note_count;
         }
 
         if (direction == LinearParameters::Direction::Down) {
             index = note_count - 1 - index;
         }
+
+        clock += 1;
+
         return notes[index];
     }
 };

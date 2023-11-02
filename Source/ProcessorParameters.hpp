@@ -14,7 +14,7 @@
 #pragma once
 
 #include "ParamData.hpp"
-#include "Algorithm.hpp"
+#include "AlgorithmParameters.hpp"
 
 #include <juce_audio_processors/juce_audio_processors.h>
  

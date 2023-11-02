@@ -96,6 +96,7 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
     auto *child = xml->createNewChildElement("LinearParameters");
     child->setAttribute("direction", parameters.linear_parameters.get_direction());
     child->setAttribute("zigzag", parameters.linear_parameters.get_zigzag());
+    child->setAttribute("restart", parameters.linear_parameters.get_restart());
     DBGLOG("  Wrote LinearParameters")
 
     //--------------------------------------
@@ -121,6 +122,8 @@ void StarpProcessor::parseCurrentXml(const juce::XmlElement * elem) {
             child->getIntAttribute("direction", LinearParameters::Direction::Up);
         parameters.linear_parameters.zigzag = 
             child->getBoolAttribute("zigzag", false);
+        parameters.linear_parameters.restart = 
+            child->getBoolAttribute("restart", false);
     }
 
     parameters.random_parameters.seed_value = 

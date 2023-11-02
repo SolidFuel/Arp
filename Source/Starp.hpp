@@ -13,6 +13,8 @@
 
 #pragma once
 
+#include <juce_core/juce_core.h>
+
 #if !defined(STARP_DEBUG)
  #define STARP_DEBUG 1
 #endif

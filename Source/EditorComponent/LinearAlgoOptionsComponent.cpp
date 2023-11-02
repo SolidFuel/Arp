@@ -33,6 +33,11 @@ LinearAlgoOptionsComponent::LinearAlgoOptionsComponent(LinearParameters * parms)
     addAndMakeVisible(zigzag_button_);
     zigzag_button_.onClick = [this]() { update_zigzag(); };
 
+    restart_button_.setButtonText("Restart");
+    restart_button_.setTooltip("Restart the sequence whenever the midi notes change");
+    addAndMakeVisible(restart_button_);
+    restart_button_.onClick = [this]() { update_restart(); };
+
     direction_listener_.onChange = [this](juce::Value &v) { 
         if (int(v.getValue()) == LinearParameters::Direction::Up) {
             up_button_.setToggleState(true, juce::sendNotification);
@@ -53,11 +58,19 @@ LinearAlgoOptionsComponent::LinearAlgoOptionsComponent(LinearParameters * parms)
     zigzag_listener_.onChange(params_->zigzag);
     params_->zigzag.addListener(&zigzag_listener_);
 
+    restart_listener_.onChange = [this](juce::Value &) {
+        restart_button_.setToggleState(params_->get_restart(), juce::sendNotification);
+    };
+
+    // force the GUI to match the model
+    restart_listener_.onChange(params_->restart);
+    params_->restart.addListener(&restart_listener_);
 }
 
 LinearAlgoOptionsComponent::~LinearAlgoOptionsComponent() {
     params_->direction.removeListener(&direction_listener_);
     params_->zigzag.removeListener(&zigzag_listener_);
+    params_->restart.removeListener(&restart_listener_);
 }
 
 void LinearAlgoOptionsComponent::update_direction() {
@@ -71,6 +84,10 @@ void LinearAlgoOptionsComponent::update_direction() {
 
 void LinearAlgoOptionsComponent::update_zigzag() {
     params_->zigzag = zigzag_button_.getToggleState();
+}
+
+void LinearAlgoOptionsComponent::update_restart() {
+    params_->restart = restart_button_.getToggleState();
 }
 
 //==============================================================
@@ -100,6 +117,7 @@ void LinearAlgoOptionsComponent::resized() {
     grid.items.add(GridItem(up_button_));
     grid.items.add(GridItem(down_button_));
     grid.items.add(GridItem(zigzag_button_));
+    grid.items.add(GridItem(restart_button_));
 
     grid.performLayout (getLocalBounds());
 

@@ -45,7 +45,7 @@ juce_add_plugin("${BaseTargetName}"
 target_sources(${BaseTargetName} PRIVATE
         HashRandom.hpp HashRandom.cpp
         position_data.hpp ValueListener.hpp
-        AlgorithmEnum.hpp Algorithm.hpp
+        AlgorithmEnum.hpp AlgorithmParameters.hpp Algorithm.hpp
         ParamData.hpp ParamData.cpp
         StarpEditor.hpp StarpEditor.cpp
         EditorComponent/AlgoChoiceComponent.hpp

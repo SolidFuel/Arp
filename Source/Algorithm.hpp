@@ -100,6 +100,8 @@ public :
 
         if (note_count == 0) {
             return -1;
+        } else if (note_count == 1) {
+            return notes[0];
         }
 
         // reset the clock if notes_changed

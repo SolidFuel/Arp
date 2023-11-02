@@ -17,13 +17,16 @@
 
 juce::PluginHostType StarpProcessor::host_type;
 
+#if STARP_DEBUG
+    std::unique_ptr<juce::FileLogger> dbgout = 
+        std::unique_ptr<juce::FileLogger>(juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "--------V2--------"));
+#endif
+
+
 StarpProcessor::StarpProcessor() : /* juce::AudioProcessor(getDefaultProperties()), */
         parameters(*this) {
 
 
-#if STARP_DEBUG
-    dbgout = juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "--------V2--------");
-#endif
 
     algo_listener_.onChange = [this](juce::Value &) { algo_changed_ = true; };
     parameters.algorithm_index.addListener(&algo_listener_);
@@ -34,11 +37,7 @@ StarpProcessor::StarpProcessor() : /* juce::AudioProcessor(getDefaultProperties(
 
 StarpProcessor::~StarpProcessor() {
 
-    if (dbgout != nullptr) {
-        delete dbgout;
-        dbgout = nullptr;
-    }
-
+    DBGLOG("StarpProcessor destructor called")
 }
 
 bool StarpProcessor::isMidiEffect() const {

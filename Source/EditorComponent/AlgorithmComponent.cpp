@@ -86,7 +86,7 @@ void AlgorithmComponent::resized() {
     auto algo = params_->get_algo_index();
     DBGLOG("algo = ", algo)
     juce::Component *optionComponent = nullptr;
-    switch (params_->get_algo_index()) {
+    switch (algo) {
         case Algorithm::Random :
             optionComponent = &randomComponent_;
             break;

@@ -32,9 +32,9 @@ std::string concat(Args&&... args) {
 }
 
 
-extern juce::FileLogger *dbgout;
 
 #if STARP_DEBUG
+    extern std::unique_ptr<juce::FileLogger> dbgout;
     #define DBGLOG(...) dbgout->logMessage(concat(__VA_ARGS__));
 #else
     #define DBGLOG(...)

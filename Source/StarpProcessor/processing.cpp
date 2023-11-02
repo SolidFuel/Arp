@@ -17,8 +17,6 @@
 #include <iomanip>
 #include <cmath>
 
-juce::FileLogger *dbgout = nullptr;
-
 speed_value speed_parameter_values[] = {
     speed_value{"1/16"  , 0.25},
     speed_value{"1/8t"  , 0.33333333 },

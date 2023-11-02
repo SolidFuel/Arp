@@ -36,7 +36,7 @@ enum Speed {
     Half
 };
 
-constexpr int default_speed = Speed::Quarter;
+constexpr int default_speed = Speed::Eighth;
 
 extern juce::Array<juce::var> SpeedIndexes;
 extern juce::StringArray SpeedChoices;

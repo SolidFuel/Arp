@@ -47,7 +47,9 @@ private:
     bool zigzag = false;
     bool restart = false;
 
-    int clock = 0;
+    int clock = -1;
+
+    int last_slot = 0;
 
 
     ValueListener direction_listener_;
@@ -104,12 +106,21 @@ public :
             return notes[0];
         }
 
-        // reset the clock if notes_changed
-        clock = clock * (1-int(notes_changed));
+        if (notes_changed) {
+            clock = 0;
+        } else {
+            // This is to make up for the fact that if
+            // the probability function decides to not play
+            // a note in slot, we won't get called. But we want
+            // the clock to 'tick' in time with the slot even
+            // if we don't choose a note.
+            clock += int(slot) - last_slot;
+            last_slot = int(slot);
+        }
 
         clock = restart ? clock : int(slot);
 
-        DBGLOG("   GNN notes = ", note_count," clock = ", clock);
+        DBGLOG("   GNN notes = ", note_count," clock = ", clock, "restart = ", restart);
 
 
         int index = 0;
@@ -128,8 +139,6 @@ public :
         if (direction == LinearParameters::Direction::Down) {
             index = note_count - 1 - index;
         }
-
-        clock += 1;
 
         return notes[index];
     }
@@ -174,30 +183,27 @@ public:
 
     int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
 
-        if (available_notes.isEmpty()) {
-            available_notes.addSet(notes);
-        } else if (notes_changed) {
+        if (notes_changed || available_notes.isEmpty()) {
             available_notes.clearQuick();
-            // Add all the stuff from the new set.
             available_notes.addSet(notes);
         }
 
         int num_notes = available_notes.size();
         DBGLOG("available note count = ", num_notes)
 
-        if (num_notes > 0) {
-            if (num_notes == 1) {
-                last_note = available_notes[0];
-                available_notes.clear();
-                return last_note;
-            } else {
-                last_note = getRandom(timeline_slot, last_note, available_notes);
-                available_notes.removeValue(last_note);
-                return last_note;
-            }
-        } else {
+        if (num_notes == 0) {
             return -1;
+        } 
+        
+        if ( num_notes == 1 ) {
+            last_note = available_notes[0];
+            available_notes.clear();
+            return last_note;
         }
+
+        last_note = getRandom(timeline_slot, last_note, available_notes);
+        available_notes.removeValue(last_note);
+        return last_note;
     }
 
     virtual ~RandomAlgorithm() override {

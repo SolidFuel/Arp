@@ -69,15 +69,15 @@ void RandomAlgoOptionsComponent::resized() {
     using Fr = juce::Grid::Fr;
     using GridItem = juce::GridItem;
 
-    grid.alignItems = juce::Grid::AlignItems::start;
+    grid.alignItems = juce::Grid::AlignItems::center;
     grid.justifyContent = juce::Grid::JustifyContent::start;
     grid.justifyItems = juce::Grid::JustifyItems::start;
-    grid.templateColumns = { Track (Fr (1)), Track(Fr(4)), Track (Fr (1)) };
+    grid.templateColumns = { Track (Fr (1)), Track(Fr(3)), Track (Fr (1)), Track (Fr (1))};
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(keyLabel_));
     grid.items.add(GridItem(keyValueLabel_));
-    grid.items.add(GridItem(changeKeyButton_));
+    grid.items.add(GridItem(changeKeyButton_).withHeight(float(getHeight() * 0.75)));
 
     grid.performLayout (getLocalBounds());
 

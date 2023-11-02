@@ -14,33 +14,10 @@
 #include "../Starp.hpp"
 
 
-MainComponent::MainComponent (ProcessorParameters *params) : params_(params),
-    randomComponent_(&params->random_parameters),
-    linearComponent_(&params->linear_parameters) {
+MainComponent::MainComponent (ProcessorParameters *params) : params_(params) {
 
     DBGLOG("Setting up MainComponent");
     auto apvts = params->apvts.get();
-
-    algoComponent_.setValue(params->algorithm_index);
-    addAndMakeVisible(algoComponent_);
-    algoComponent_.refresh();
-    algoComponent_.addListener(this);
-
-    
-    DBGLOG("Setting up MainComponent CHECK 1");
-    
-    //==============================================
-    addChildComponent(randomComponent_);
-    
-    DBGLOG("Setting up MainComponent CHECK 2");
-
-    //==============================================
-    addChildComponent(linearComponent_);
-    
-    DBGLOG("Setting up MainComponent CHECK 3");
-
-    // Make sure we are in synch with the current value
-    valueChanged(params->algorithm_index);
 
     //==============================================
 
@@ -49,7 +26,6 @@ MainComponent::MainComponent (ProcessorParameters *params) : params_(params),
     speedSlider_.setTooltip("How often a note will (possibly) be generated");
     addAndMakeVisible(speedSlider_);
     speedAttachment_.reset (new SliderAttachment (*apvts, "speed", speedSlider_));
-
 
     gateLabel_.setText ("Gate %", juce::dontSendNotification);
     addAndMakeVisible (gateLabel_);
@@ -91,19 +67,6 @@ MainComponent::MainComponent (ProcessorParameters *params) : params_(params),
 
 }
 
-void MainComponent::valueChanged(juce::Value &) { 
-    auto algo = params_->get_algo_index();
-
-    DBGLOG("MainComponent::valueChanged = ", algo)
-
-    randomComponent_.setVisible(algo == Algorithm::Random);
-    linearComponent_.setVisible(algo == Algorithm::Linear);
-
-    resized();
-
-}
-
-
 
 //==============================================================================
 void MainComponent::paint (juce::Graphics& g) {
@@ -124,41 +87,10 @@ void MainComponent::resized() {
     using Fr = juce::Grid::Fr;
     using GridItem = juce::GridItem;
 
-    grid.alignItems = juce::Grid::AlignItems::start;
+    grid.alignItems = juce::Grid::AlignItems::center;
     grid.justifyContent = juce::Grid::JustifyContent::start;
     grid.justifyItems = juce::Grid::JustifyItems::start;
     grid.templateColumns = { Track (Fr (1)), Track(Fr(4)), Track (Fr (1)) };
-
-    //----------------------------------------
-    // Algorithm Choice
-    grid.templateRows.add(Track (Fr (1)));
-    grid.items.add(GridItem(algoComponent_).withArea(GridItem::Span(1), GridItem::Span(3)));
-
-    DBGLOG("MainComponent Algorithm Choice DONE");
-
-    //----------------------------------------
-    // Algorithm Specific Options
-
-    grid.templateRows.add(Track (Fr (1)));
-    auto algo = params_->get_algo_index();
-    DBGLOG("algo = ", algo)
-    juce::Component *optionComponent = nullptr;
-    switch (params_->get_algo_index()) {
-        case Algorithm::Random :
-            optionComponent = &randomComponent_;
-            break;
-        case Algorithm::Linear :
-            optionComponent = &linearComponent_;
-            break;
-        default :
-            jassertfalse;
-    }
-
-    jassert(optionComponent != nullptr);
-
-    grid.items.add(GridItem(*optionComponent).withArea(GridItem::Span(1), GridItem::Span(3)));
-
-    DBGLOG("MainComponent Algorithm Options DONE");
 
     //----------------------------------------
 

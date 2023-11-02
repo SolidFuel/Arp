@@ -20,6 +20,7 @@ LinearAlgoOptionsComponent::LinearAlgoOptionsComponent(LinearParameters * parms)
     up_button_.setButtonText("Up");
     up_button_.setClickingTogglesState(true);
     up_button_.setRadioGroupId(GROUP_ID);
+    up_button_.setConnectedEdges(juce::Button::ConnectedEdgeFlags::ConnectedOnRight);
     addAndMakeVisible(up_button_);
     up_button_.onClick = [this]() { update_direction(); };
 
@@ -27,6 +28,7 @@ LinearAlgoOptionsComponent::LinearAlgoOptionsComponent(LinearParameters * parms)
     down_button_.setButtonText("Down");
     down_button_.setClickingTogglesState(true);
     down_button_.setRadioGroupId(GROUP_ID);
+    down_button_.setConnectedEdges(juce::Button::ConnectedEdgeFlags::ConnectedOnLeft);
     addAndMakeVisible(down_button_);
 
     zigzag_button_.setButtonText("Zigzag");
@@ -102,20 +104,31 @@ void LinearAlgoOptionsComponent::resized() {
 
     DBGLOG("LinearAlgoOptionsComponent::resized called")
 
-    juce::Grid grid;
+    using Grid = juce::Grid;
+
+    Grid grid;
  
-    using Track = juce::Grid::TrackInfo;
-    using Fr = juce::Grid::Fr;
+    using Track = Grid::TrackInfo;
+    using Fr = Grid::Fr;
     using GridItem = juce::GridItem;
 
-    grid.alignItems = juce::Grid::AlignItems::start;
+    grid.alignItems = juce::Grid::AlignItems::center;
     grid.justifyContent = juce::Grid::JustifyContent::start;
-    grid.justifyItems = juce::Grid::JustifyItems::start;
+    grid.justifyItems = Grid::JustifyItems::start;
     grid.templateColumns = { Track (Fr (1)), Track(Fr(1)), Track (Fr (2)), Track (Fr (2)) };
 
     grid.templateRows.add(Track (Fr (1)));
-    grid.items.add(GridItem(up_button_));
-    grid.items.add(GridItem(down_button_));
+    auto dir_button_height = float(getHeight() * 0.75f);
+
+    // use the prefered width of the "Down" button since it should be larger.
+    float dir_button_width = float(down_button_.getBestWidthForHeight(int(dir_button_height)));    
+
+    grid.items.add(GridItem(up_button_).withHeight(dir_button_height)
+        .withWidth(dir_button_width)
+        .withJustifySelf(GridItem::JustifySelf::end) );
+
+    grid.items.add(GridItem(down_button_).withHeight(dir_button_height).withWidth(dir_button_width));
+
     grid.items.add(GridItem(zigzag_button_));
     grid.items.add(GridItem(restart_button_));
 

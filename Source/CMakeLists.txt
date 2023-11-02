@@ -54,6 +54,8 @@ target_sources(${BaseTargetName} PRIVATE
         EditorComponent/RandomAlgoOptionsComponent.cpp
         EditorComponent/LinearAlgoOptionsComponent.hpp
         EditorComponent/LinearAlgoOptionsComponent.cpp
+        EditorComponent/AlgorithmComponent.hpp
+        EditorComponent/AlgorithmComponent.cpp
         EditorComponent/MainComponent.hpp
         EditorComponent/MainComponent.cpp
         EditorComponent/HeaderComponent.hpp

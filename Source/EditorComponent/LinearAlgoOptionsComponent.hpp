@@ -51,6 +51,8 @@ private :
     void update_restart();
 
 
+//==========================================================
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinearAlgoOptionsComponent)
 
 
 };

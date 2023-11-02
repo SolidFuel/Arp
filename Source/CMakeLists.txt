@@ -56,15 +56,14 @@ target_sources(${BaseTargetName} PRIVATE
         EditorComponent/LinearAlgoOptionsComponent.cpp
         EditorComponent/AlgorithmComponent.hpp
         EditorComponent/AlgorithmComponent.cpp
-        EditorComponent/MainComponent.hpp
-        EditorComponent/MainComponent.cpp
+        EditorComponent/PropertyComponent.hpp
+        EditorComponent/PropertyComponent.cpp
         EditorComponent/HeaderComponent.hpp
         EditorComponent/HeaderComponent.cpp
         ProcessorParameters.hpp ProcessorParameters.cpp
         StarpProcessor.hpp
         StarpProcessor/processing.cpp
         StarpProcessor/setup.cpp
-        EditorComponent/MainComponent.hpp
         )
 
 target_compile_definitions(${BaseTargetName}

@@ -21,12 +21,12 @@
 
 using  SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 
-class MainComponent : public juce::Component {
+class PropertyComponent : public juce::Component {
 
 
 public:
 
-    MainComponent(ProcessorParameters *params);
+    PropertyComponent(ProcessorParameters *params);
 
     void paint(juce::Graphics&) override;
     void resized() override;
@@ -65,5 +65,5 @@ private:
     std::unique_ptr<SliderAttachment> delayAttachment_;
 
 //==========================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PropertyComponent)
 };

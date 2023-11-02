@@ -16,7 +16,7 @@
 #include "ParamData.hpp"
 #include "EditorComponent/HeaderComponent.hpp"
 #include "EditorComponent/AlgorithmComponent.hpp"
-#include "EditorComponent/MainComponent.hpp"
+#include "EditorComponent/PropertyComponent.hpp"
 
 //==============================================================================
 class StarpEditor  : public juce::AudioProcessorEditor
@@ -34,9 +34,9 @@ private:
 
     StarpProcessor& proc_;
 
-    HeaderComponent header_component;
-    AlgorithmComponent algorithm_component;
-    MainComponent main_component;
+    HeaderComponent header_component_;
+    AlgorithmComponent algorithm_component_;
+    PropertyComponent property_component_;
 
 
 //==========================================================

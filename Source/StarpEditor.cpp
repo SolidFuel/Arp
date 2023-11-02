@@ -19,20 +19,20 @@
 constexpr int WIDTH = 600;
 constexpr int HEADER_HEIGHT = 50;
 constexpr int ALGORITHM_HEIGHT = 75;
-constexpr int MAIN_HEIGHT = 275;
-constexpr int HEIGHT = HEADER_HEIGHT + ALGORITHM_HEIGHT + MAIN_HEIGHT;
+constexpr int PROPERTY_HEIGHT = 275;
+constexpr int HEIGHT = HEADER_HEIGHT + ALGORITHM_HEIGHT + PROPERTY_HEIGHT;
 constexpr int MARGIN = 5;
 
 //==============================================================================
 StarpEditor::StarpEditor (StarpProcessor& p) :
     AudioProcessorEditor (&p), proc_ (p),
-    main_component(p.getParameters()),
-    algorithm_component(p.getParameters())
+    property_component_(p.getParameters()),
+    algorithm_component_(p.getParameters())
 {
 
-    addAndMakeVisible(header_component);
-    addAndMakeVisible(algorithm_component);
-    addAndMakeVisible(main_component);
+    addAndMakeVisible(header_component_);
+    addAndMakeVisible(algorithm_component_);
+    addAndMakeVisible(property_component_);
 
     setSize(WIDTH, HEIGHT);
 }
@@ -56,9 +56,9 @@ void StarpEditor::resized() {
     box.flexDirection = juce::FlexBox::Direction::column;
     box.alignContent = juce::FlexBox::AlignContent::center;
 
-    box.items.add(FlexItem(float(WIDTH), float(HEADER_HEIGHT), header_component));
-    box.items.add(FlexItem(float(WIDTH), float(ALGORITHM_HEIGHT), algorithm_component));
-    box.items.add(FlexItem(float(WIDTH-(MARGIN*2)), float(MAIN_HEIGHT), main_component)
+    box.items.add(FlexItem(float(WIDTH), float(HEADER_HEIGHT), header_component_));
+    box.items.add(FlexItem(float(WIDTH), float(ALGORITHM_HEIGHT), algorithm_component_));
+    box.items.add(FlexItem(float(WIDTH-(MARGIN*2)), float(PROPERTY_HEIGHT), property_component_)
             .withMargin(FlexItem::Margin(0, MARGIN, 0, MARGIN)));
 
 

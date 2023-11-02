@@ -10,13 +10,13 @@
  * in the root directory.
  ****/
 
-#include "MainComponent.hpp"
+#include "PropertyComponent.hpp"
 #include "../Starp.hpp"
 
 
-MainComponent::MainComponent (ProcessorParameters *params) : params_(params) {
+PropertyComponent::PropertyComponent (ProcessorParameters *params) : params_(params) {
 
-    DBGLOG("Setting up MainComponent");
+    DBGLOG("Setting up PropertyComponent");
     auto apvts = params->apvts.get();
 
     //==============================================
@@ -69,17 +69,17 @@ MainComponent::MainComponent (ProcessorParameters *params) : params_(params) {
 
 
 //==============================================================================
-void MainComponent::paint (juce::Graphics& g) {
+void PropertyComponent::paint (juce::Graphics& g) {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    DBGLOG("MainComponent::paint called")
+    DBGLOG("PropertyComponent::paint called")
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
 }
 
 //==============================================================================
-void MainComponent::resized() {
+void PropertyComponent::resized() {
 
-    DBGLOG("MainComponent::resized called")
+    DBGLOG("PropertyComponent::resized called")
     
     juce::Grid grid;
  

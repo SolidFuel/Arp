@@ -47,7 +47,7 @@ void RandomAlgoOptionsComponent::update_seed_display() {
 
 //==============================================================================
 void RandomAlgoOptionsComponent::changeKey() {
-    DBGLOG("MainComponent::changeKey called")
+    DBGLOG("RandomAlgoOptionsComponent::changeKey called")
     params_->pick_new_key();
 }
 

@@ -33,4 +33,7 @@ private:
     void processMenu_(int results);
     void showAboutBox_();
 
+//==========================================================
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderComponent)
+
 };

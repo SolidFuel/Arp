@@ -43,7 +43,7 @@ bool operator<(const played_note& lhs, const played_note& rhs) {
 }
 
 
-bool operator==(const schedule& lhs, const schedule& rhs){ return lhs.start == rhs.start; }
+bool operator==(const schedule& lhs, const schedule& rhs){ return std::abs(lhs.start - rhs.start) < 0.000001; }
 bool operator<(const schedule& lhs, const schedule& rhs) { return lhs.start < rhs.start; }
 
 

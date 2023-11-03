@@ -3,6 +3,28 @@ set (BaseTargetName Starp)
 
 add_compile_definitions("$<$<CONFIG:Release>:STARP_DEBUG=0>")
 
+include(GetGitRevisionDescription)
+
+get_git_head_revision(GIT_REF GIT_HASH)
+
+string(SUBSTRING "${GIT_HASH}" 0 7 GIT_SHORT_HASH )
+
+message("GIT_HASH = " ${GIT_HASH})
+message("GIT_SHORT_HASH = " ${GIT_SHORT_HASH})
+message("GIT_REF = " ${GIT_REF})
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+configure_file(version.hpp.in version.hpp @ONLY)
+
+string(TOUPPER "${CMAKE_BUILD_TYPE}" Starp_build_type)
+if(${Starp_build_type} STREQUAL "RELEASE")
+        set(Starp_PRODUCT_NAME "Starp")
+        set(Starp_PLUGIN_CODE "Strp" )
+else()
+        set(Starp_PRODUCT_NAME "StarpDev")
+        set(Starp_PLUGIN_CODE "StrD")
+endif()
 
 juce_add_plugin("${BaseTargetName}"
         # VERSION ...                               # Set this if the plugin version is different to the project version
@@ -16,23 +38,32 @@ juce_add_plugin("${BaseTargetName}"
         EDITOR_WANTS_KEYBOARD_FOCUS FALSE
         COPY_PLUGIN_AFTER_BUILD FALSE
         PLUGIN_MANUFACTURER_CODE CVmp
-        PLUGIN_CODE Strp
+        PLUGIN_CODE ${Starp_PLUGIN_CODE}
         FORMATS VST3
-        PRODUCT_NAME "Starp")
+        PRODUCT_NAME ${Starp_PRODUCT_NAME} )
 
 target_sources(${BaseTargetName} PRIVATE
         HashRandom.hpp HashRandom.cpp
-        ParamData.cpp
+        position_data.hpp ValueListener.hpp
+        AlgorithmEnum.hpp AlgorithmParameters.hpp Algorithm.hpp
+        ParamData.hpp ParamData.cpp
         StarpEditor.hpp StarpEditor.cpp
-        EditorComponent/MainComponent.hpp
-        EditorComponent/MainComponent.cpp
+        EditorComponent/AlgoChoiceComponent.hpp
+        EditorComponent/AlgoChoiceComponent.cpp
+        EditorComponent/RandomAlgoOptionsComponent.hpp
+        EditorComponent/RandomAlgoOptionsComponent.cpp
+        EditorComponent/LinearAlgoOptionsComponent.hpp
+        EditorComponent/LinearAlgoOptionsComponent.cpp
+        EditorComponent/AlgorithmComponent.hpp
+        EditorComponent/AlgorithmComponent.cpp
+        EditorComponent/PropertyComponent.hpp
+        EditorComponent/PropertyComponent.cpp
         EditorComponent/HeaderComponent.hpp
         EditorComponent/HeaderComponent.cpp
         ProcessorParameters.hpp ProcessorParameters.cpp
         StarpProcessor.hpp
         StarpProcessor/processing.cpp
         StarpProcessor/setup.cpp
-        EditorComponent/MainComponent.hpp
         )
 
 target_compile_definitions(${BaseTargetName}

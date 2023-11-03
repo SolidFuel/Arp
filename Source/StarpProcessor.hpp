@@ -16,9 +16,13 @@
 #include "ParamData.hpp"
 #include "ProcessorParameters.hpp"
 
+#include "position_data.hpp"
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <fstream>
+
+#include "ValueListener.hpp"
+
 
 struct speed_value {
     juce::String name;
@@ -34,14 +38,6 @@ struct played_note {
 bool operator==(const played_note& lhs, const played_note& rhs);
 bool operator<(const played_note& lhs, const played_note& rhs);
 
-//============================================================================
-struct position_data {
-    double position_as_slots = -1.0;
-    double slot_fraction = 0.0;
-    double slot_number = -1.0;
-    int samples_per_qn;
-    bool is_playing = false;
-};
 
 //============================================================================
 struct schedule {
@@ -53,8 +49,8 @@ bool operator==(const schedule& lhs, const schedule& rhs);
 bool operator<(const schedule& lhs, const schedule& rhs);
 
 //==============================================================================
-class StarpProcessor  : public juce::AudioProcessor
-{
+class StarpProcessor  : public juce::AudioProcessor {
+
 public:
     //==============================================================================
     // These are in setup.cpp
@@ -72,6 +68,9 @@ public:
 
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
+
+    void processMidi(int sample_count, juce::MidiBuffer&);
 
     //==============================================================================
 
@@ -99,15 +98,6 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    //==============================================================================
-    void set_algo_index(int i) { algo_index = i; }
-
-    //==============================================================================
-    // Parameters
-
-    int algo_index = Algorithm::Random;
-
-
 private:
 
 
@@ -125,7 +115,7 @@ private:
 
     // Set of notes we can choose from if we need
     // to schedule something.
-    juce::SortedSet<int> notes_;
+    juce::SortedSet<int> incoming_notes_;
 
     // Notes we have sent the note-on for but need to wait
     // to send the note-off
@@ -135,18 +125,16 @@ private:
     juce::Array<schedule> scheduled_notes_;
 
 
-    int current_algo_index_ = -1;
-    void reassign_algorithm(int new_algo);
+    bool algo_changed_ = false;
+    void update_algorithm(int new_algo);
     std::unique_ptr<AlgorithmBase> algo_obj_;
 
-    double next_scheduled_slot_number = -1.0;
+    double last_scheduled_slot_number = -1.0;
 
     bool last_play_state_ = false;
-    bool last_bypassed_state_ = false;
 
     double getSpeedFactor();
     double getGate();
-
 
     // Last time in millisecs that processBlock was called.
     // Used to detect bypass. If we haven't been called in
@@ -157,12 +145,21 @@ private:
     // Used to detect looping.
     double last_position_ = -1;
 
+    double fake_clock_sample_count_ = 0;
+
     const position_data compute_block_position();
     std::optional<juce::MidiMessage>maybe_play_note(bool notes_changed, double for_slot, double start_pos);
 
-    void schedule_note(double current_pos, double slot_number);
+    void schedule_note(double current_pos, double slot_number, bool can_advance);
 
     void reset_data();
+
+    void parseCurrentXml(const juce::XmlElement * elem);
+    void parseOriginalXml(const juce::XmlElement * elem);
+
+    juce::SharedResourcePointer<juce::TooltipWindow> tooltipWindow;
+
+    ValueListener algo_listener_;
 
 public:
     ProcessorParameters* getParameters() { return &parameters; }

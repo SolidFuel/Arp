@@ -14,12 +14,7 @@
 
 #include <juce_core/juce_core.h>
 
-//========================================================================
-enum Algorithm {
-    Random,
-    Up,
-    Down
-};
+#include "AlgorithmEnum.hpp"
 
 extern juce::Array<juce::var> AlgorithmIndexes;
 extern juce::StringArray AlgorithmChoices;
@@ -41,7 +36,7 @@ enum Speed {
     Half
 };
 
-constexpr int default_speed = Speed::Quarter;
+constexpr int default_speed = Speed::Eighth;
 
 extern juce::Array<juce::var> SpeedIndexes;
 extern juce::StringArray SpeedChoices;

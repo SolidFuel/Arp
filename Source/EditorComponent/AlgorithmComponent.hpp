@@ -12,28 +12,38 @@
 
 #pragma once
 
+
+#include "AlgoChoiceComponent.hpp"
+#include "RandomAlgoOptionsComponent.hpp"
+#include "LinearAlgoOptionsComponent.hpp"
+
+#include "../ProcessorParameters.hpp"
+#include "../Starp.hpp"
+
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 
+class AlgorithmComponent : public juce::Component, juce::Value::Listener {
 
-class HeaderComponent : public juce::Component {
 
 public:
 
-    HeaderComponent();
+    AlgorithmComponent(ProcessorParameters *params);
 
+    void valueChanged(juce::Value &v);
     void paint(juce::Graphics&) override;
     void resized() override;
 
 private:
-    juce::Label nameLabel_;
 
-    juce::TextButton menuButton_;
+    ProcessorParameters *params_ = nullptr;
 
-    void showMenu_();
-    void processMenu_(int results);
-    void showAboutBox_();
+    AlgoChoiceComponent algoComponent_;
+    RandomAlgoOptionsComponent randomComponent_;
+    LinearAlgoOptionsComponent linearComponent_;
 
 //==========================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AlgorithmComponent)
+
 
 };

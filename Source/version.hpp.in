@@ -10,32 +10,8 @@
  * in the root directory.
  ****/
 
-
-#pragma once
-
-#include <juce_core/juce_core.h>
-
-#if !defined(STARP_DEBUG)
- #define STARP_DEBUG 1
-#endif
-
 #include <string>
 
-template<typename ...Args>
-std::string concat(Args&&... args) {
-    std::stringstream ss;
+const std::string GIT_HASH = "@GIT_SHORT_HASH@";
 
-    (ss << ... << args);
-
-    return ss.str();
-
-}
-
-
-
-#if STARP_DEBUG
-    extern std::unique_ptr<juce::FileLogger> dbgout;
-    #define DBGLOG(...) dbgout->logMessage(concat(__VA_ARGS__));
-#else
-    #define DBGLOG(...)
-#endif
+const std::string STARP_VERSION = "@CMAKE_PROJECT_VERSION@";

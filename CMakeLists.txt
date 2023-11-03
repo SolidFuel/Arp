@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(Starp VERSION 0.0.3)
+project(Starp VERSION 0.1.0)
 
 #First, we'll add the CMake folder, in case we'll need to find_package later:
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
@@ -7,9 +7,16 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 #Compile commands, useful for some IDEs like VS-Code
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
+set(default_build_type "Release")
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
+  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
+      STRING "Choose the type of build." FORCE)
+endif()
+
 #Minimum MacOS target, set globally
 
-if (${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0 CACHE STRING "Minimum OS X deployment version" FORCE)
 
     #code signing to run on an iOS device:
@@ -26,7 +33,7 @@ if (UniversalBinary)
 endif()
 
 
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     #static linking in Windows
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     add_compile_options("$<$<CONFIG:Release>:/O2>")

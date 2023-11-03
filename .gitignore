@@ -1,5 +1,12 @@
-build/
-.vscode/
+# test results
+Testing/
+
+# default build directory for visual studio
+out/
+# Visual studio configuration directory
 .vs/
 
-Testing/
+#default build directory for vscode
+build/
+# vscode configuration directory
+.vscode/

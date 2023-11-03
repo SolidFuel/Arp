@@ -15,10 +15,8 @@
 #include "StarpProcessor.hpp"
 #include "ParamData.hpp"
 #include "EditorComponent/HeaderComponent.hpp"
-#include "EditorComponent/MainComponent.hpp"
-
-using  SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
-
+#include "EditorComponent/AlgorithmComponent.hpp"
+#include "EditorComponent/PropertyComponent.hpp"
 
 //==============================================================================
 class StarpEditor  : public juce::AudioProcessorEditor
@@ -31,27 +29,17 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
-    StarpProcessor& proc_;
-
-    juce::Value algo_value_;
-
-    HeaderComponent header_component;
-    MainComponent main_component;
-
-
 
 private:
 
+    StarpProcessor& proc_;
 
-    juce::ChoicePropertyComponent algorithmChoice_{ 
-        algo_value_, 
-        "Algorithm:", 
-        AlgorithmChoices, 
-        AlgorithmIndexes
-    };
+    HeaderComponent header_component_;
+    AlgorithmComponent algorithm_component_;
+    PropertyComponent property_component_;
 
+
+//==========================================================
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpEditor)
 };

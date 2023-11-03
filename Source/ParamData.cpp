@@ -16,15 +16,13 @@
 
 juce::Array<juce::var> AlgorithmIndexes {{
     juce::var{Algorithm::Random},
-    juce::var{Algorithm::Up},
-    juce::var{Algorithm::Down},
+    juce::var{Algorithm::Linear},
 
 }};
 
 juce::StringArray AlgorithmChoices{{
     "Random",
-    "Up",
-    "Down"
+    "Linear"
 }};
 
 //========================================================================

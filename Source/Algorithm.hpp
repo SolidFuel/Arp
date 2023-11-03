@@ -10,69 +10,148 @@
  * in the root directory.
  ****/
 
-#include <juce_audio_processors/juce_audio_processors.h>
+#pragma once
+
+#include "Starp.hpp"
 
 #include "HashRandom.hpp"
+#include "AlgorithmEnum.hpp"
+#include "ValueListener.hpp"
+#include "AlgorithmParameters.hpp"
+#include <juce_audio_processors/juce_audio_processors.h>
+
 
 class AlgorithmBase {
-
-protected:
-    int last_index = -1;
 
 public:
 
     AlgorithmBase() = default;
-    AlgorithmBase(AlgorithmBase *o){
-        if (o != nullptr)
-            last_index = o->last_index;
-    }
+
     virtual int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed)  = 0;
 
     virtual void reset() {
-        last_index = -1;
     }
+
+    virtual Algorithm get_algo() const = 0;
 
     virtual ~AlgorithmBase() {}
 
 };
 
-class UpAlgorithm : public AlgorithmBase {
-    using AlgorithmBase::AlgorithmBase;
+class LinearAlgorithm : public AlgorithmBase {
 
-    int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
-        if (notes.size() > 0) {
-            last_index += 1;
-            last_index = last_index % notes.size();
-            return notes[last_index];
-        } else {
-            last_index = -1;
-            return -1;
-        }
+private: 
+    LinearParameters * p_;
+
+    int direction = LinearParameters::Direction::Up;
+    bool zigzag = false;
+    bool restart = false;
+
+    int clock = -1;
+
+    int last_slot = 0;
+
+
+    ValueListener direction_listener_;
+    ValueListener zigzag_listener_;
+    ValueListener restart_listener_;
+
+    void update_parameters() {
+        DBGLOG("LinearAlgorithm::update_parameters called")
+        direction = p_->get_direction();
+        zigzag = p_->get_zigzag();
+        restart = p_->get_restart();
     }
 
-};
+public :
+    LinearAlgorithm(LinearParameters * p) : p_{p} {
+        update_parameters();
 
-class DownAlgorithm : public AlgorithmBase {
-    using AlgorithmBase::AlgorithmBase;
+        direction_listener_.onChange = [this](juce::Value &) {
+            update_parameters();
+        };
 
-    int getNextNote(double, const juce::SortedSet<int> &notes, bool) override {
-        if (notes.size() > 0) {
+        p_->direction.addListener(&direction_listener_);
 
-            if (last_index <= 0) {
-                last_index = notes.size();
-            }
-            last_index -= 1;
-            return notes[last_index];
-        } else {
-            last_index = -1;
-            return -1;
-        }
+        zigzag_listener_.onChange = [this](juce::Value &) {
+            update_parameters();
+        };
+
+        p_->zigzag.addListener(&zigzag_listener_);
+
+        restart_listener_.onChange = [this](juce::Value &) {
+            update_parameters();
+        };
+
+        p_->restart.addListener(&restart_listener_);
     }
 
+    ~LinearAlgorithm() {
+        p_->direction.removeListener(&direction_listener_);
+        p_->zigzag.removeListener(&zigzag_listener_);
+        p_->restart.removeListener(&restart_listener_);
+    }
+
+    Algorithm get_algo() const { return Algorithm::Linear; }
+
+    int getNextNote(double slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
+
+        DBGLOG("Linear GETNEXTNOTE called slot = ", int(slot), " changed = ", notes_changed)
+
+        auto note_count = notes.size();
+
+        if (note_count == 0) {
+            return -1;
+        } else if (note_count == 1) {
+            return notes[0];
+        }
+
+        if (notes_changed) {
+            clock = 0;
+        } else {
+            // This is to make up for the fact that if
+            // the probability function decides to not play
+            // a note in slot, we won't get called. But we want
+            // the clock to 'tick' in time with the slot even
+            // if we don't choose a note.
+            clock += int(slot) - last_slot;
+        }
+        last_slot = int(slot);
+
+        clock = restart ? clock : int(slot);
+
+        DBGLOG("   GNN notes = ", note_count," clock = ", clock, " restart = ", restart);
+
+
+        int index = 0;
+
+        if (zigzag) {
+            // -2 because we don't want to repeat the top and bottom.
+            auto cycle_length = 2 * note_count - 2;
+
+            index = clock % cycle_length;
+            DBGLOG("   GNN zigzag cl = ", cycle_length, " index1 = ", index )
+            auto correction = ((index - (note_count-1))*2);
+            auto condition = index >= note_count;
+            index -= condition * correction;
+            DBGLOG("   GNN zigzag" , " corr = ", correction, " cond = ", condition, " index = ", index)
+
+        } else {
+            index = clock % note_count;
+        }
+
+        if (direction == LinearParameters::Direction::Down) {
+            index = note_count - 1 - index;
+        }
+
+        return notes[index];
+    }
 };
 
-class RandomAlgorithm : public AlgorithmBase {
-    using AlgorithmBase::AlgorithmBase;
+class RandomAlgorithm : public AlgorithmBase, juce::Value::Listener {
+
+    // Non owning
+    RandomParameters *p_;
 
     juce::int64 key_;
 
@@ -80,16 +159,21 @@ class RandomAlgorithm : public AlgorithmBase {
 
     int last_note = -1;
 
-    juce::FileLogger *dbgout_ = nullptr;
-
 
 public:
-    void setKey(juce::int64 key) {
-        key_ = key;
+
+    RandomAlgorithm(RandomParameters *p) : p_(p) {
+        key_ = juce::int64(p_->seed_value.getValue());
+        p_->seed_value.addListener(this);
     }
 
-    void setDebug(juce::FileLogger *logger) {
-        dbgout_ = logger;
+    void valueChanged(juce::Value &) {
+        DBGLOG("RandomAlgorithm::valueChanged called")
+        key_ = juce::int64(p_->seed_value.getValue());
+    }
+
+    juce::int64 getKey() const {
+        return key_;
     }
 
     void reset() override {
@@ -98,39 +182,39 @@ public:
         available_notes.clearQuick();
     }
 
+    Algorithm get_algo() const { return Algorithm:: Random; }
+
+
     int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
 
-        if (available_notes.isEmpty()) {
-            available_notes.addSet(notes);
-        } else if (notes_changed) {
+        if (notes_changed || available_notes.isEmpty()) {
             available_notes.clearQuick();
-            // Add all the stuff from the new set.
             available_notes.addSet(notes);
         }
 
         int num_notes = available_notes.size();
-        if (dbgout_) {
-            std::stringstream x;
-            x << "available note count = " << num_notes;
-            dbgout_->logMessage(x.str());
+        DBGLOG("available note count = ", num_notes)
+
+        if (num_notes == 0) {
+            return -1;
+        } 
+        
+        if ( num_notes == 1 ) {
+            last_note = available_notes[0];
+            available_notes.clear();
+            return last_note;
         }
 
-        if (num_notes > 0) {
-            if (num_notes == 1) {
-                last_note = available_notes[0];
-                available_notes.clear();
-                return last_note;
-            } else {
-                last_note = getRandom(timeline_slot, last_note, available_notes);
-                available_notes.removeValue(last_note);
-                return last_note;
-            }
-        } else {
-            return -1;
-        }
+        last_note = getRandom(timeline_slot, last_note, available_notes);
+        available_notes.removeValue(last_note);
+        return last_note;
     }
 
-    virtual ~RandomAlgorithm() override = default;
+    virtual ~RandomAlgorithm() override {
+        // We don't own the p_, so it might out live us.
+        // explicitly remove the listener.
+        p_->seed_value.removeListener(this);
+    };
 
 private :
     int getRandom(double slot, int note_to_avoid, const juce::SortedSet<int> & notes) {

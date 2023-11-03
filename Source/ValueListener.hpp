@@ -10,32 +10,23 @@
  * in the root directory.
  ****/
 
-
 #pragma once
 
-#include <juce_core/juce_core.h>
+#include <juce_gui_basics/juce_gui_basics.h>
 
-#if !defined(STARP_DEBUG)
- #define STARP_DEBUG 1
-#endif
+#include "functional"
 
-#include <string>
+#include "Starp.hpp"
 
-template<typename ...Args>
-std::string concat(Args&&... args) {
-    std::stringstream ss;
+class ValueListener : public juce::Value::Listener {
+    void valueChanged(juce::Value &v) { 
+        //DBGLOG("ValueListener cb triggered")
+        if (onChange) {
+            //DBGLOG("ValueListener calling onChange")
+            onChange(v);
+        } 
+    }
 
-    (ss << ... << args);
-
-    return ss.str();
-
-}
-
-
-
-#if STARP_DEBUG
-    extern std::unique_ptr<juce::FileLogger> dbgout;
-    #define DBGLOG(...) dbgout->logMessage(concat(__VA_ARGS__));
-#else
-    #define DBGLOG(...)
-#endif
+public :
+    std::function<void(juce::Value &)> onChange;
+};

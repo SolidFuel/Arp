@@ -10,61 +10,76 @@
  * in the root directory.
  ****/
 
-#include "MainComponent.hpp"
+#include "PropertyComponent.hpp"
+#include "../Starp.hpp"
 
-MainComponent::MainComponent (ProcessorParameters *params) {
 
+PropertyComponent::PropertyComponent (ProcessorParameters *params) : params_(params) {
 
+    DBGLOG("Setting up PropertyComponent");
     auto apvts = params->apvts.get();
-    
-    //==============================================
-    addAndMakeVisible(keyValueLabel_);
-    keyValueLabel_.getTextValue().referTo(key_value_);
-    key_value_.setValue(juce::String::toHexString(params->random_key_));
-    keyLabel_.setText ("Seed", juce::dontSendNotification);
-    addAndMakeVisible (keyLabel_);
-
 
     //==============================================
 
     speedLabel_.setText ("Speed", juce::dontSendNotification);
     addAndMakeVisible (speedLabel_);
+    speedSlider_.setTooltip("How often a note will (possibly) be generated");
     addAndMakeVisible(speedSlider_);
     speedAttachment_.reset (new SliderAttachment (*apvts, "speed", speedSlider_));
-
 
     gateLabel_.setText ("Gate %", juce::dontSendNotification);
     addAndMakeVisible (gateLabel_);
     gateSlider_.setTextValueSuffix("%");
+    gateSlider_.setTooltip("How long the note will be on as a proportion of the speed.");
     addAndMakeVisible(gateSlider_);
     gateAttachment_.reset (new SliderAttachment (*apvts, "gate", gateSlider_));
 
     veloLabel_.setText ("Velocity", juce::dontSendNotification);
     addAndMakeVisible (veloLabel_);
+    veloSlider_.setTooltip("MIDI velocity of the generated note");
     addAndMakeVisible(veloSlider_);
     veloAttachment_.reset (new SliderAttachment (*apvts, "velocity", veloSlider_));
 
     veloRangeLabel_.setText ("Velocity Range", juce::dontSendNotification);
     addAndMakeVisible (veloRangeLabel_);
+    veloRangeSlider_.setTooltip("Range of variance (+/-) of the velocity");
     addAndMakeVisible(veloRangeSlider_);
     veloRangeAttachment_.reset (new SliderAttachment (*apvts, "velocity_range", veloRangeSlider_));
 
     probabilityLabel_.setText ("Probability", juce::dontSendNotification);
     addAndMakeVisible (probabilityLabel_);
+    probabilitySlider_.setTooltip("Chance of a note being generated");
     addAndMakeVisible(probabilitySlider_);
     probabilityAttachment_.reset (new SliderAttachment (*apvts, "probability", probabilitySlider_));
 
+    advanceLabel_.setText ("Timing Advance", juce::dontSendNotification);
+    addAndMakeVisible (advanceLabel_);
+    advanceSlider_.setTooltip("Variance in the timing - this sets the how much it might be early");
+    addAndMakeVisible(advanceSlider_);
+    advanceAttachment_.reset (new SliderAttachment (*apvts, "timing_advance", advanceSlider_));
+
+    delayLabel_.setText ("Timing Delay", juce::dontSendNotification);
+    addAndMakeVisible (delayLabel_);
+    delaySlider_.setTooltip("Variance in the timing - this sets the how much it might be late");
+    addAndMakeVisible(delaySlider_);
+    delayAttachment_.reset (new SliderAttachment (*apvts, "timing_delay", delaySlider_));
+
+
 }
 
+
 //==============================================================================
-void MainComponent::paint (juce::Graphics& g) {
+void PropertyComponent::paint (juce::Graphics& g) {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
+    DBGLOG("PropertyComponent::paint called")
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
 }
 
 //==============================================================================
-void MainComponent::resized() {
+void PropertyComponent::resized() {
+
+    DBGLOG("PropertyComponent::resized called")
     
     juce::Grid grid;
  
@@ -72,36 +87,40 @@ void MainComponent::resized() {
     using Fr = juce::Grid::Fr;
     using GridItem = juce::GridItem;
 
-    grid.alignItems = juce::Grid::AlignItems::start;
+    grid.alignItems = juce::Grid::AlignItems::center;
     grid.justifyContent = juce::Grid::JustifyContent::start;
     grid.justifyItems = juce::Grid::JustifyItems::start;
-    grid.templateColumns = { Track (Fr (1)), Track(Fr(5)) };
+    grid.templateColumns = { Track (Fr (1)), Track(Fr(4)), Track (Fr (1)) };
 
-    grid.templateRows.add(Track (Fr (1)));
-    grid.items.add(GridItem(keyLabel_));
-    grid.items.add(GridItem(keyValueLabel_));
-
+    //----------------------------------------
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(speedLabel_));
-    grid.items.add(GridItem(speedSlider_));
+    grid.items.add(GridItem(speedSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(gateLabel_));
-    grid.items.add(GridItem(gateSlider_));
+    grid.items.add(GridItem(gateSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(probabilityLabel_));
-    grid.items.add(GridItem(probabilitySlider_));
+    grid.items.add(GridItem(probabilitySlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(veloLabel_));
-    grid.items.add(GridItem(veloSlider_));
+    grid.items.add(GridItem(veloSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(veloRangeLabel_));
-    grid.items.add(GridItem(veloRangeSlider_));
+    grid.items.add(GridItem(veloRangeSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
+    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(advanceLabel_));
+    grid.items.add(GridItem(advanceSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
+
+    grid.templateRows.add(Track (Fr (1)));
+    grid.items.add(GridItem(delayLabel_));
+    grid.items.add(GridItem(delaySlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.performLayout (getLocalBounds());
     

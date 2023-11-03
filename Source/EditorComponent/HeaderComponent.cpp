@@ -12,7 +12,10 @@
 
 #include "HeaderComponent.hpp"
 
+#include <version.hpp>
+
 const std::string about_text = "      STARP    \n"
+    "Version " + STARP_VERSION + " (" + GIT_HASH + ")\n"
     "Copyright (c) 2023 Mark Hollomon\n"
     "Licensed under GPL 3 (https://opensource.org/license/gpl-3-0/)\n"
     "Source code : https://github.com/mhhollomon/Starp\n"
@@ -38,7 +41,7 @@ const std::string about_text = "      STARP    \n"
     ;
 
 HeaderComponent::HeaderComponent() {
-    nameLabel_.setText ("  STARP  ", juce::dontSendNotification);
+    nameLabel_.setText ("STARP", juce::dontSendNotification);
     nameLabel_.setFont(juce::Font(32.0f, juce::Font::bold));
     nameLabel_.setJustificationType(juce::Justification::centred);
     addAndMakeVisible (nameLabel_);
@@ -100,22 +103,17 @@ void HeaderComponent::processMenu_(int results) {
     menuButton_.setEnabled(true);
 }
 
+constexpr int MARGIN = 10;
 //==============================================================================
 void HeaderComponent::resized() {
 
-    using FlexItem = juce::FlexItem;
-    juce::FlexBox box;
+    //const auto component_width = getWidth();
+    const auto component_height = getHeight();
 
-    box.flexDirection = juce::FlexBox::Direction::row;
-    box.alignContent = juce::FlexBox::AlignContent::center;
-    box.alignItems = juce::FlexBox::AlignItems::center;
-    box.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+    const auto menu_height = component_height / 2.0f;
+    menuButton_.changeWidthToFitText(int(menu_height));
+    menuButton_.setTopLeftPosition({MARGIN, int(menu_height / 2.0f)});
 
-    box.items.add(FlexItem(menuButton_).withMinWidth(50.0f).withHeight(float(getHeight()) * 0.5f)
-            .withMargin(FlexItem::Margin(0, 0, 0, 10)) );
-    box.items.add(FlexItem(nameLabel_).withMinWidth(400.0f).withHeight(float(getHeight())));
-    
-
-    box.performLayout(getLocalBounds());
-    
+    nameLabel_.setSize(200, component_height-MARGIN);
+    nameLabel_.setCentreRelative(0.5f, 0.5f);
 }

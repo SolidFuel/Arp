@@ -115,12 +115,12 @@ public :
             // the clock to 'tick' in time with the slot even
             // if we don't choose a note.
             clock += int(slot) - last_slot;
-            last_slot = int(slot);
         }
+        last_slot = int(slot);
 
         clock = restart ? clock : int(slot);
 
-        DBGLOG("   GNN notes = ", note_count," clock = ", clock, "restart = ", restart);
+        DBGLOG("   GNN notes = ", note_count," clock = ", clock, " restart = ", restart);
 
 
         int index = 0;
@@ -130,7 +130,11 @@ public :
             auto cycle_length = 2 * note_count - 2;
 
             index = clock % cycle_length;
-            index -= (index >= note_count) * (index - note_count +2);
+            DBGLOG("   GNN zigzag cl = ", cycle_length, " index1 = ", index )
+            auto correction = ((index - (note_count-1))*2);
+            auto condition = index >= note_count;
+            index -= condition * correction;
+            DBGLOG("   GNN zigzag" , " corr = ", correction, " cond = ", condition, " index = ", index)
 
         } else {
             index = clock % note_count;

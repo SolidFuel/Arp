@@ -10,8 +10,6 @@
  * in the root directory.
  ****/
 
-#pragma once
-
 #include "RandomAlgoOptionsComponent.hpp"
 
 #include "../Starp.hpp"

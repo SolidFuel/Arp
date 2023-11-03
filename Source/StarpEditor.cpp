@@ -26,8 +26,8 @@ constexpr int MARGIN = 5;
 //==============================================================================
 StarpEditor::StarpEditor (StarpProcessor& p) :
     AudioProcessorEditor (&p), proc_ (p),
-    property_component_(p.getParameters()),
-    algorithm_component_(p.getParameters())
+    algorithm_component_(p.getParameters()),
+    property_component_(p.getParameters())
 {
 
     addAndMakeVisible(header_component_);

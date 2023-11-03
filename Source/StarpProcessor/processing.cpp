@@ -242,13 +242,39 @@ void StarpProcessor::reset_data() {
 }
 
 //============================================================================
+void StarpProcessor::processBlock (juce::AudioBuffer<double>& buffer,
+                                    juce::MidiBuffer& midiBuffer) {
+
+
+    //DBGLOG("--- ProcessBlock START")
+
+    auto sample_count = buffer.getNumSamples();
+
+    for (auto i = 0; i < buffer.getNumChannels(); ++i)
+        buffer.clear (i, 0, sample_count);
+
+    processMidi(sample_count, midiBuffer);
+
+}
+
+//============================================================================
 void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                     juce::MidiBuffer& midiBuffer) {
 
 
     //DBGLOG("--- ProcessBlock START")
 
-    auto numSamples = buffer.getNumSamples();
+    auto sample_count = buffer.getNumSamples();
+
+    for (auto i = 0; i < buffer.getNumChannels(); ++i)
+        buffer.clear (i, 0, sample_count);
+
+    processMidi(sample_count, midiBuffer);
+
+}
+
+//============================================================================
+void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer ) {
 
     //DBGLOG("Algo_changed = ", algo_changed);
 
@@ -259,18 +285,9 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     //DBGLOG("parameters checked")
 
-    // A pure MIDI plugin shouldn't be provided any audio data
-    // but Ableton Live (and others) can't handle a pure midi effect.
-    // jassert (buffer.getNumChannels() == 0);
-    // In Ableton (and others) we actually have an audio output.
-    // So we need to zero it.
-
-    for (auto i = 0; i < buffer.getNumChannels(); ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
     position_data pd = compute_block_position();
 
-    double slots_in_buffer = (double(numSamples) / double(pd.samples_per_qn)) / getSpeedFactor();
+    double slots_in_buffer = (double(sample_count) / double(pd.samples_per_qn)) / getSpeedFactor();
     
     auto slot_duration = static_cast<int>(std::ceil(double(pd.samples_per_qn) * getSpeedFactor()));
 
@@ -403,7 +420,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
             // if the note happens right at the end of the buffer, weird things happen.
             // So, don't play it now, wait for the next buffer.
-            if (offset < numSamples - 2) {
+            if (offset < sample_count - 2) {
                 auto msg = maybe_play_note(notes_changed, scheduled_notes_[0].slot_number, scheduled_notes_[0].start );
                 if (msg) {
                     DBGLOG("--- Adding msg to buffer at offset ", offset);
@@ -429,7 +446,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         // this opportunity to reset the fake clock.
         fake_clock_sample_count_ = 0;
     } else {
-        fake_clock_sample_count_ += numSamples;
+        fake_clock_sample_count_ += sample_count;
     }
 
     last_block_call_ = juce::Time::currentTimeMillis();

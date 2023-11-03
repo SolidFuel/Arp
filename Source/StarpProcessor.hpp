@@ -68,6 +68,9 @@ public:
 
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
+
+    void processMidi(int sample_count, juce::MidiBuffer&);
 
     //==============================================================================
 

@@ -17,13 +17,13 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 configure_file(version.hpp.in version.hpp @ONLY)
 
-string(TOUPPER ${CMAKE_BUILD_TYPE} Starp_build_type)
-if( ${Starp_build_type} STREQUAL "RELEASE")
-        set("Starp_PRODUCT_NAME" "Starp")
-        set("Starp_PLUGIN_CODE" "Strp" )
+string(TOUPPER "${CMAKE_BUILD_TYPE}" Starp_build_type)
+if(${Starp_build_type} STREQUAL "RELEASE")
+        set(Starp_PRODUCT_NAME "Starp")
+        set(Starp_PLUGIN_CODE "Strp" )
 else()
-        set("Starp_PRODUCT_NAME" "StarpDev")
-        set("Starp_PLUGIN_CODE" "StrD")
+        set(Starp_PRODUCT_NAME "StarpDev")
+        set(Starp_PLUGIN_CODE "StrD")
 endif()
 
 juce_add_plugin("${BaseTargetName}"

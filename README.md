@@ -79,11 +79,21 @@ FL does not recognize MIDI effects. The easiest way to set this up is using patc
 1. Add _Starp_ to the patcher and hook it up (it should look like the below).
     **NOTE** Add it from the synth subsection of the plugin menu, not the effects subsection.
 1. Double Click on the _Starp_ instance and the use the cogwheel in the top-left to set 
-   the midi output port. Exact prot number does not matter.
+   the midi output port. Exact port number does not matter.
 
 ![FL Studio Patcher example](docs/starp-patcher.png)
 
 ![FL Studio Midi setting for Starp](docs/Starp-patcher-settings.png)
+
+### Cubase 12
+Similar to the Ableton Live set up, you will need two tracks. Be sure to
+route the midi from the track with _Starp_ on it to the instrument track
+(See below).
+
+*Note* Record Arm must be on or the MIDI will not reach the synth.
+
+![Cubase Midi Setup](docs/cubase-channel-setup.png)
+
 
 ## Technology
 

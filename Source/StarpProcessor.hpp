@@ -101,7 +101,7 @@ public:
 private:
 
 
-    ProcessorParameters parameters;
+    ProcessorParameters parameters_;
 
     //==============================================================================
 
@@ -129,7 +129,7 @@ private:
     void update_algorithm(int new_algo);
     std::unique_ptr<AlgorithmBase> algo_obj_;
 
-    double last_scheduled_slot_number = -1.0;
+    double last_scheduled_slot_number_ = -1.0;
 
     bool last_play_state_ = false;
 
@@ -152,7 +152,7 @@ private:
 
     void schedule_note(double current_pos, double slot_number, bool can_advance);
 
-    void reset_data();
+    void reset_data(bool clear_incoming = true);
 
     void parseCurrentXml(const juce::XmlElement * elem);
     void parseOriginalXml(const juce::XmlElement * elem);
@@ -162,7 +162,7 @@ private:
     ValueListener algo_listener_;
 
 public:
-    ProcessorParameters* getParameters() { return &parameters; }
+    ProcessorParameters* getParameters() { return &parameters_; }
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)

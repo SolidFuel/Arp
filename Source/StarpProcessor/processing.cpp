@@ -88,22 +88,22 @@ void StarpProcessor::update_algorithm(int new_algo) {
         // somehow flawed. But lets be cautions.
         switch (new_algo) {
             case Algorithm::Random :
-                algo_obj_ = std::make_unique<RandomAlgorithm>(&parameters.random_parameters);
+                algo_obj_ = std::make_unique<RandomAlgorithm>(&parameters_.random_parameters);
                 break;
             case Algorithm::Up :
-                parameters.linear_parameters.direction = LinearParameters::Direction::Up;
-                parameters.linear_parameters.zigzag = false;
-                parameters.algorithm_index = Algorithm::Linear;
-                algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters.linear_parameters);
+                parameters_.linear_parameters.direction = LinearParameters::Direction::Up;
+                parameters_.linear_parameters.zigzag = false;
+                parameters_.algorithm_index = Algorithm::Linear;
+                algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters_.linear_parameters);
                 break;
             case Algorithm::Down :
-                parameters.linear_parameters.direction = LinearParameters::Direction::Down;
-                parameters.linear_parameters.zigzag = false;
-                parameters.algorithm_index = Algorithm::Linear;
-                algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters.linear_parameters);
+                parameters_.linear_parameters.direction = LinearParameters::Direction::Down;
+                parameters_.linear_parameters.zigzag = false;
+                parameters_.algorithm_index = Algorithm::Linear;
+                algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters_.linear_parameters);
                 break;
             case Algorithm::Linear :
-                algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters.linear_parameters);
+                algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters_.linear_parameters);
                 break;
         }
 
@@ -138,8 +138,7 @@ const position_data StarpProcessor::compute_block_position() {
             auto opt_pos_qn = position->getPpqPosition();
             if (opt_pos_qn) {
                 // position in slots
-                auto pos_in_slots = *opt_pos_qn / getSpeedFactor();
-                pd.set_position(pos_in_slots);
+                pd.set_position(*opt_pos_qn, getSpeedFactor());
             }
         }
     }
@@ -148,7 +147,7 @@ const position_data StarpProcessor::compute_block_position() {
 
     if (! pd.is_playing ) {
         // need to synthesize the data
-        pd.set_position(fake_clock_sample_count_ / (pd.samples_per_qn * getSpeedFactor()));
+        pd.set_position(fake_clock_sample_count_ / pd.samples_per_qn, getSpeedFactor());
     }
 
     return pd;
@@ -165,9 +164,9 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(
         return std::nullopt;
     }
 
-    int note_prob = parameters.probability->get();
+    int note_prob = parameters_.probability->get();
 
-    HashRandom prob_rng{"Probability", parameters.get_random_seed(), for_slot};
+    HashRandom prob_rng{"Probability", parameters_.get_random_seed(), for_slot};
     if (prob_rng.nextInt(0, 101) > note_prob ) {
         return std::nullopt;
     }
@@ -177,11 +176,11 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(
     int new_note = algo_obj_->getNextNote(for_slot, incoming_notes_, notes_changed);
     if (new_note >= 0 ) {
 
-        int range = parameters.velo_range->get();
-        int note_velocity = parameters.velocity->get();
+        int range = parameters_.velo_range->get();
+        int note_velocity = parameters_.velocity->get();
 
         if (range > 0)  {
-            HashRandom vel_rng{"Velocity", parameters.get_random_seed(), for_slot};
+            HashRandom vel_rng{"Velocity", parameters_.get_random_seed(), for_slot};
 
 
             int max = juce::jmin(128, note_velocity + range); 
@@ -206,17 +205,17 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(
 }
 
 void StarpProcessor::schedule_note(double current_pos, double slot_number, bool can_advance) {
-    HashRandom rng{"Humanize", parameters.get_random_seed(), slot_number};
+    HashRandom rng{"Humanize", parameters_.get_random_seed(), slot_number};
 
-    auto advance = parameters.timing_advance->get() * can_advance;
+    auto advance = parameters_.timing_advance->get() * can_advance;
     float variance = rng.nextFloat(
             advance,
-            parameters.timing_delay->get());
+            parameters_.timing_delay->get());
 
     double sched_start = slot_number + (variance/100.0);
 
     if (sched_start >= current_pos ) {
-        last_scheduled_slot_number = slot_number;
+        last_scheduled_slot_number_ = slot_number;
         scheduled_notes_.addUsingDefaultSort({slot_number, sched_start});
         DBGLOG("--- scheduling slot ", slot_number, " @ ", sched_start);
     } else if (can_advance) {
@@ -230,12 +229,13 @@ void StarpProcessor::schedule_note(double current_pos, double slot_number, bool 
 }
 
 //============================================================================
-void StarpProcessor::reset_data() {
+void StarpProcessor::reset_data(bool clear_incoming) {
     DBGLOG("   reset_data called");
 
-    last_scheduled_slot_number = -1.0;
+    last_scheduled_slot_number_ = -1.0;
     scheduled_notes_.clearQuick();
-    incoming_notes_.clearQuick();
+    if (clear_incoming)
+        incoming_notes_.clearQuick();
     active_notes_.clearQuick();
 
     DBGLOG("   reset_data finished"); 
@@ -280,7 +280,7 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
     if (algo_changed_) {
         algo_changed_ = false;
-        update_algorithm(parameters.get_algo_index());
+        update_algorithm(parameters_.get_algo_index());
     }
 
     //DBGLOG("parameters checked")
@@ -294,6 +294,8 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
     // auto this_call_time = juce::Time::currentTimeMillis();
 
     bool do_cleanup = false;
+    bool clear_incoming = true;
+    bool play_transition = false;
 
     // if (this_call_time - last_block_call_ > 100) {
     //     DBGLOG("--- Was Bypassed - resetting");
@@ -304,6 +306,7 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
         DBGLOG("--- Play state changed to ", pd.is_playing);
         last_play_state_ = pd.is_playing;
         do_cleanup = true;
+        play_transition = true;
     }
 
     if (pd.position_as_slots < last_position_) {
@@ -312,11 +315,19 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
         // Assume not for now.
         DBGLOG("--- LOOPING - resetting data");
         do_cleanup = true;
+        // During loops, Cubase has a habit of sending the Note-Ons
+        // that happen at the beginning of the loop in the ending
+        // block of the loop. Don't clear the notes that we have
+        // seen so that we hold on to them.
+        if (host_type.isCubase() && !play_transition) {
+            DBGLOG("--- LOOPING - Doing Cubase specifics.");
+            clear_incoming = false;
+        }
     }
     last_position_ = pd.position_as_slots;
 
     if ( do_cleanup) {
-        reset_data();
+        reset_data(clear_incoming);
     }
 
     //DBGLOG("processBlock setup done")
@@ -325,10 +336,11 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 #if STARP_DEBUG
     if (pd.is_playing || !midiBuffer.isEmpty() || !incoming_notes_.isEmpty() || !active_notes_.isEmpty() ) {
         std::stringstream x;
-        x << "START playing = " << pd.is_playing
-            << ";\n     pos_as_slots = " << pd.position_as_slots << "; slot_number = " << pd.slot_number
-            << "; slot_fraction = " << std::setprecision(10) << pd.slot_fraction 
-            << ";\n     gate = " << getGate() << "; slots_in_buffer = " << slots_in_buffer;
+        x << "START playing = " << pd.is_playing   << "; ppq_pos = " << pd.qn_position << "; pos_as_slots = " << pd.position_as_slots 
+            << ";\n     slot_number = " << pd.slot_number
+            << "; slot_fraction = " << std::setprecision(7) << pd.slot_fraction 
+            << ";\n     gate = " << getGate() << "; slots_in_buffer = " << slots_in_buffer
+            << "; last_sched_slot = " << last_scheduled_slot_number_;
         dbgout->logMessage(x.str());
     }
 #endif
@@ -339,14 +351,22 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
     juce::MidiBuffer newBuffer;
 
+    int on_count = 0;
+    int off_count = 0;
+    int stop_count = 0;
+
     for (const auto metadata : midiBuffer)
     {
         const auto msg = metadata.getMessage();
-        if      (msg.isNoteOn())  { incoming_notes_.add(msg.getNoteNumber()); notes_changed = true; }
-        else if (msg.isNoteOff()) { 
+        if      (msg.isNoteOn())  { 
+            incoming_notes_.add(msg.getNoteNumber()); 
+            notes_changed = true;
+            on_count += 1;
+        } else if (msg.isNoteOff()) { 
             if (incoming_notes_.contains(msg.getNoteNumber())) {
                 incoming_notes_.removeValue(msg.getNoteNumber());
-                notes_changed = true; 
+                notes_changed = true;
+                off_count += 1;
             } else {
                 // if we didn't see the NoteOn assume we were bypassed and put the message back in the buffer.
                 newBuffer.addEvent(msg, metadata.samplePosition);
@@ -380,6 +400,7 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
             int offset = juce::jmin(0, int((end_slot - pd.position_as_slots) * slot_duration));
             DBGLOG("stop ", note_value, " @ ", offset);
             midiBuffer.addEvent(juce::MidiMessage::noteOff (1, note_value), offset);
+            stop_count += 1;
 
         } else {
             // we didn't stop it, so copy to the new list
@@ -392,13 +413,19 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
     //DBGLOG("active notes processed")
 
+    if (pd.is_playing) {
+        DBGLOG("incoming = ", incoming_notes_.size(), "; active = ", active_notes_.size(),
+            "; changed = ", notes_changed, "; on = ", on_count, "; off = ", off_count, "; stop = ", stop_count
+        )
+    }
+
     //------------------------------------------------------------------------
     // Schedule note if required.
     if (! incoming_notes_.isEmpty()) {
-        if (last_scheduled_slot_number < pd.slot_number) {
+        if (last_scheduled_slot_number_ < pd.slot_number) {
             schedule_note(pd.position_as_slots, pd.slot_number, false);
         }
-        if ( (pd.slot_fraction > 0.5) &&  last_scheduled_slot_number <= pd.slot_number) {
+        if ( (pd.slot_fraction > 0.5) &&  last_scheduled_slot_number_ <= pd.slot_number) {
             schedule_note(pd.position_as_slots, pd.slot_number+ 1.0, true);
         }
 
@@ -460,10 +487,10 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 //============================================================================
 
 double StarpProcessor:: getSpeedFactor() {
-    return speed_parameter_values[parameters.speed->getIndex()].multiplier;
+    return speed_parameter_values[parameters_.speed->getIndex()].multiplier;
 }
 
 double StarpProcessor::getGate() {
-    return parameters.gate->get() / 100.0;
+    return parameters_.gate->get() / 100.0;
 }
 

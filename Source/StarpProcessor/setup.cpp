@@ -24,12 +24,12 @@ juce::PluginHostType StarpProcessor::host_type;
 
 
 StarpProcessor::StarpProcessor() : /* juce::AudioProcessor(getDefaultProperties()), */
-        parameters(*this) {
+        parameters_(*this) {
 
 
 
     algo_listener_.onChange = [this](juce::Value &) { algo_changed_ = true; };
-    parameters.algorithm_index.addListener(&algo_listener_);
+    parameters_.algorithm_index.addListener(&algo_listener_);
 
     DBGLOG("Finished Processor Constructor")
 
@@ -80,22 +80,22 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
     DBGLOG("  Created Top")
 
     //--------------------------------------
-    auto state = parameters.apvts->copyState();
+    auto state = parameters_.apvts->copyState();
     auto apvts_xml =state.createXml();
     // createXml gives back a unqiue_ptr. So we need to unwrap it.
     xml->addChildElement(apvts_xml.release());
     DBGLOG("  Wrote ValueTree")
 
     //--------------------------------------
-    xml->setAttribute("key", juce::String{parameters.get_random_seed()});
-    xml->setAttribute("algorithm", parameters.get_algo_index());
+    xml->setAttribute("key", juce::String{parameters_.get_random_seed()});
+    xml->setAttribute("algorithm", parameters_.get_algo_index());
     DBGLOG("  Wrote attributes")
 
     //--------------------------------------
     auto *child = xml->createNewChildElement("LinearParameters");
-    child->setAttribute("direction", parameters.linear_parameters.get_direction());
-    child->setAttribute("zigzag", parameters.linear_parameters.get_zigzag());
-    child->setAttribute("restart", parameters.linear_parameters.get_restart());
+    child->setAttribute("direction", parameters_.linear_parameters.get_direction());
+    child->setAttribute("zigzag", parameters_.linear_parameters.get_zigzag());
+    child->setAttribute("restart", parameters_.linear_parameters.get_restart());
     DBGLOG("  Wrote LinearParameters")
 
     //--------------------------------------
@@ -110,25 +110,25 @@ void StarpProcessor::parseCurrentXml(const juce::XmlElement * elem) {
 
     DBGLOG("StarpProcessor::parseCurrentXml called")
 
-    auto *child = elem->getChildByName(parameters.apvts->state.getType());
+    auto *child = elem->getChildByName(parameters_.apvts->state.getType());
     if (child) {
-        parameters.apvts->replaceState(juce::ValueTree::fromXml(*child));
+        parameters_.apvts->replaceState(juce::ValueTree::fromXml(*child));
     }
 
     child = elem->getChildByName("LinearParameters");
     if (child) {
-        parameters.linear_parameters.direction = 
+        parameters_.linear_parameters.direction = 
             child->getIntAttribute("direction", LinearParameters::Direction::Up);
-        parameters.linear_parameters.zigzag = 
+        parameters_.linear_parameters.zigzag = 
             child->getBoolAttribute("zigzag", false);
-        parameters.linear_parameters.restart = 
+        parameters_.linear_parameters.restart = 
             child->getBoolAttribute("restart", false);
     }
 
-    parameters.random_parameters.seed_value = 
-        elem->getStringAttribute("key", juce::String{parameters.get_random_seed()})
+    parameters_.random_parameters.seed_value = 
+        elem->getStringAttribute("key", juce::String{parameters_.get_random_seed()})
             .getLargeIntValue();
-    parameters.algorithm_index = 
+    parameters_.algorithm_index = 
         elem->getIntAttribute("algorithm", Algorithm::Random);
 
 }
@@ -138,34 +138,34 @@ void StarpProcessor::parseOriginalXml(const juce::XmlElement * xml) {
 
         DBGLOG("StarpProcessor::parseOriginalXml called")
 
-        if (xml->hasTagName(parameters.apvts->state.getType())) {
-            parameters.apvts->replaceState(juce::ValueTree::fromXml(*xml));
+        if (xml->hasTagName(parameters_.apvts->state.getType())) {
+            parameters_.apvts->replaceState(juce::ValueTree::fromXml(*xml));
 
             auto child = xml->getChildByName("LinearParameters");
             if (child) {
-                parameters.linear_parameters.direction = 
+                parameters_.linear_parameters.direction = 
                     child->getIntAttribute("direction", LinearParameters::Direction::Up);
-                parameters.linear_parameters.zigzag = 
+                parameters_.linear_parameters.zigzag = 
                     child->getBoolAttribute("zigzag", false);
             }
 
-            parameters.random_parameters.seed_value = 
-                xml->getStringAttribute("key", juce::String{parameters.get_random_seed()})
+            parameters_.random_parameters.seed_value = 
+                xml->getStringAttribute("key", juce::String{parameters_.get_random_seed()})
                         .getLargeIntValue();
             
             auto algo = xml->getIntAttribute("algorithm", Algorithm::Random);
             DBGLOG("   input algo = ", algo)
             if (algo == Algorithm::Down ) {
                 algo = Algorithm::Linear;
-                parameters.linear_parameters.direction = LinearParameters::Direction::Down;
-                parameters.linear_parameters.zigzag = false;
+                parameters_.linear_parameters.direction = LinearParameters::Direction::Down;
+                parameters_.linear_parameters.zigzag = false;
             } else if (algo == Algorithm::Up ) {
                 algo = Algorithm::Linear;
-                parameters.linear_parameters.direction = LinearParameters::Direction::Up;
-                parameters.linear_parameters.zigzag = false;
+                parameters_.linear_parameters.direction = LinearParameters::Direction::Up;
+                parameters_.linear_parameters.zigzag = false;
             }
-            parameters.algorithm_index.setValue(algo);
-            DBGLOG("   final algo = ", parameters.get_algo_index())
+            parameters_.algorithm_index.setValue(algo);
+            DBGLOG("   final algo = ", parameters_.get_algo_index())
         }
 }
 

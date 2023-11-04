@@ -7,8 +7,7 @@ This one does.
 
 You can get it to randomize the velocity as well. That pattern will also be stable.
 
-**NOTE**: This plugin does not work *except when the play-head is moving*. 
-I plan to address this in a future version.
+There is also a set of "Linear" algorthm as well to play with.
 
 ## Building
 
@@ -24,7 +23,7 @@ cmake --build build
 
 ## Install From Release
 
-These instructions assume you are installingfrom the provide release builds.
+These instructions assume you are installing from the provided release builds.
 If you build it yourself, the instruction will be similar. The needed files
 will under the `${BUILD}/Source/Starp_artefacts/Release/VST3`
 
@@ -73,7 +72,33 @@ Yes, this is painful for no good reason.
 
 ![Live Setup Example](docs/StudioOne-setup.png)
 
+### FL Studio 21
+FL does not recognize MIDI effects. The easiest way to set this up is using patcher.
+
+1. Add a patcher to the instrument bank with whatever synth/instrument you want.
+1. Add _Starp_ to the patcher and hook it up (it should look like the below).
+    **NOTE** Add it from the synth subsection of the plugin menu, not the effects subsection.
+1. Double Click on the _Starp_ instance and the use the cogwheel in the top-left to set 
+   the midi output port. Exact prot number does not matter.
+
+![FL Studio Patcher example](docs/starp-patcher.png)
+
+![FL Studio Midi setting for Starp](docs/Starp-patcher-settings.png)
+
 ## Technology
 
 - [TinySHA1](https://github.com/mohaps/TinySHA1/)
 - [JUCE](https://juce.com/)
+
+## License/Copyright
+
+ Starp - Stable Random Arpeggiator Plugin 
+ Copyright (C) 2023 Mark Hollomon
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the **GNU General Public License** as published by the 
+ Free Software Foundation, either version 3 of the License, or (at your 
+ option) any later version. This program is distributed in the hope that it 
+ will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See [the license file](LICENSE) for more details.

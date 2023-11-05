@@ -148,12 +148,14 @@ public :
     }
 };
 
-class RandomAlgorithm : public AlgorithmBase, juce::Value::Listener {
+//===================================================================
+class RandomAlgorithm : public AlgorithmBase {
 
     // Non owning
     RandomParameters *p_;
 
-    juce::int64 key_;
+    juce::int64 seed_;
+    bool replace_;
 
     juce::SortedSet<int> available_notes;
 
@@ -163,17 +165,18 @@ class RandomAlgorithm : public AlgorithmBase, juce::Value::Listener {
 public:
 
     RandomAlgorithm(RandomParameters *p) : p_(p) {
-        key_ = juce::int64(p_->seed_value.getValue());
-        p_->seed_value.addListener(this);
-    }
 
-    void valueChanged(juce::Value &) {
-        DBGLOG("RandomAlgorithm::valueChanged called")
-        key_ = juce::int64(p_->seed_value.getValue());
-    }
+        seed_listener_.onChange = [this](juce::Value &) {
+            update_parameters();
+        };
+        p_->seed_value.addListener(&seed_listener_);
 
-    juce::int64 getKey() const {
-        return key_;
+        replace_listener_.onChange = [this](juce::Value &) {
+            update_parameters();
+        };        
+        p_->replace.addListener(&replace_listener_);
+
+        update_parameters();
     }
 
     void reset() override {
@@ -186,6 +189,8 @@ public:
 
 
     int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
+
+        DBGLOG("Random GETNEXTNOTE called slot = ", int(timeline_slot), " changed = ", notes_changed)
 
         if (notes_changed || available_notes.isEmpty()) {
             available_notes.clearQuick();
@@ -206,21 +211,37 @@ public:
         }
 
         last_note = getRandom(timeline_slot, last_note, available_notes);
-        available_notes.removeValue(last_note);
+        if (!replace_) {
+            available_notes.removeValue(last_note);
+        }
         return last_note;
     }
 
     virtual ~RandomAlgorithm() override {
         // We don't own the p_, so it might out live us.
         // explicitly remove the listener.
-        p_->seed_value.removeListener(this);
+        p_->seed_value.removeListener(&seed_listener_);
+        p_->replace.removeListener(&replace_listener_);
     };
 
 private :
+
+    ValueListener seed_listener_;
+    ValueListener replace_listener_;
+
+    void update_parameters() {
+        DBGLOG("RandomAlgorithm::update_parameters called")
+        seed_ = p_->get_seed();
+        DBGLOG("RandomAlgorithm::update_parameters seed done")
+        replace_ = p_->get_replace();
+        DBGLOG("RandomAlgorithm::update_parameters replace done")
+    }
+
+
     int getRandom(double slot, int note_to_avoid, const juce::SortedSet<int> & notes) {
 
 
-        HashRandom rng{"Note", key_, slot};
+        HashRandom rng{"Note", seed_, slot};
 
         for (int j=0; j < 20; ++j) {
             // need to do better, but this is an okay proof of concept

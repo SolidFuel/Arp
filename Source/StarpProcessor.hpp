@@ -117,6 +117,10 @@ private:
     // to schedule something.
     juce::SortedSet<int> incoming_notes_;
 
+    // Has incoming_notes_ changed since the last
+    // time we called the note picking algoirthm ?
+    bool notes_changed_ = false;
+
     // Notes we have sent the note-on for but need to wait
     // to send the note-off
     juce::Array<played_note> active_notes_;
@@ -148,7 +152,7 @@ private:
     double fake_clock_sample_count_ = 0;
 
     const position_data compute_block_position();
-    std::optional<juce::MidiMessage>maybe_play_note(bool notes_changed, double for_slot, double start_pos);
+    std::optional<juce::MidiMessage>maybe_play_note(double for_slot, double start_pos);
 
     void schedule_note(double current_pos, double slot_number, bool can_advance);
 

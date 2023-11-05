@@ -92,7 +92,12 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
     DBGLOG("  Wrote attributes")
 
     //--------------------------------------
-    auto *child = xml->createNewChildElement("LinearParameters");
+    auto *child = xml->createNewChildElement("RandomParameters");
+    child->setAttribute("replace", parameters_.random_parameters.get_replace());
+    DBGLOG("  Wrote RandomParameters")
+
+    //--------------------------------------
+    child = xml->createNewChildElement("LinearParameters");
     child->setAttribute("direction", parameters_.linear_parameters.get_direction());
     child->setAttribute("zigzag", parameters_.linear_parameters.get_zigzag());
     child->setAttribute("restart", parameters_.linear_parameters.get_restart());
@@ -115,6 +120,8 @@ void StarpProcessor::parseCurrentXml(const juce::XmlElement * elem) {
         parameters_.apvts->replaceState(juce::ValueTree::fromXml(*child));
     }
 
+    DBGLOG(" -- apvts  done")
+
     child = elem->getChildByName("LinearParameters");
     if (child) {
         parameters_.linear_parameters.direction = 
@@ -125,11 +132,25 @@ void StarpProcessor::parseCurrentXml(const juce::XmlElement * elem) {
             child->getBoolAttribute("restart", false);
     }
 
+    DBGLOG(" -- linear done")
+
+    child = elem->getChildByName("RandomParameters");
+    if (child) {
+        parameters_.random_parameters.replace = 
+            child->getBoolAttribute("replace", false);
+    }
+
+    DBGLOG(" -- random done")
+
+    // These 2 for historical reasons reside on the main tag.
     parameters_.random_parameters.seed_value = 
         elem->getStringAttribute("key", juce::String{parameters_.get_random_seed()})
             .getLargeIntValue();
     parameters_.algorithm_index = 
         elem->getIntAttribute("algorithm", Algorithm::Random);
+
+    DBGLOG(" -- others done")
+
 
 }
 

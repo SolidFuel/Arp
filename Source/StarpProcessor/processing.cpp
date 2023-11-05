@@ -155,8 +155,7 @@ const position_data StarpProcessor::compute_block_position() {
 }
 
 //============================================================================
-std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(
-    bool notes_changed, double for_slot, double start_pos) {
+std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(double for_slot, double start_pos) {
 
 
     if (incoming_notes_.size() == 0) {
@@ -173,7 +172,9 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(
 
     std::optional<juce::MidiMessage> retval;
 
-    int new_note = algo_obj_->getNextNote(for_slot, incoming_notes_, notes_changed);
+    int new_note = algo_obj_->getNextNote(for_slot, incoming_notes_, notes_changed_);
+    notes_changed_ = false;
+
     if (new_note >= 0 ) {
 
         int range = parameters_.velo_range->get();
@@ -234,9 +235,12 @@ void StarpProcessor::reset_data(bool clear_incoming) {
 
     last_scheduled_slot_number_ = -1.0;
     scheduled_notes_.clearQuick();
-    if (clear_incoming)
-        incoming_notes_.clearQuick();
     active_notes_.clearQuick();
+
+    if (clear_incoming) {
+        incoming_notes_.clearQuick();
+        notes_changed_ = false;
+    }
 
     DBGLOG("   reset_data finished"); 
 }
@@ -276,14 +280,10 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 //============================================================================
 void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer ) {
 
-    //DBGLOG("Algo_changed = ", algo_changed);
-
     if (algo_changed_) {
         algo_changed_ = false;
         update_algorithm(parameters_.get_algo_index());
     }
-
-    //DBGLOG("parameters checked")
 
     position_data pd = compute_block_position();
 
@@ -296,11 +296,6 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
     bool do_cleanup = false;
     bool clear_incoming = true;
     bool play_transition = false;
-
-    // if (this_call_time - last_block_call_ > 100) {
-    //     DBGLOG("--- Was Bypassed - resetting");
-    //     do_cleanup = true;
-    // }
 
     if (pd.is_playing != last_play_state_) {
         DBGLOG("--- Play state changed to ", pd.is_playing);
@@ -347,8 +342,6 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
 
     // === Read Midi Messages and update incoming_notes_ set
-    bool notes_changed = false;
-
     juce::MidiBuffer newBuffer;
 
     int on_count = 0;
@@ -360,12 +353,12 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
         const auto msg = metadata.getMessage();
         if      (msg.isNoteOn())  { 
             incoming_notes_.add(msg.getNoteNumber()); 
-            notes_changed = true;
+            notes_changed_ = true;
             on_count += 1;
         } else if (msg.isNoteOff()) { 
             if (incoming_notes_.contains(msg.getNoteNumber())) {
                 incoming_notes_.removeValue(msg.getNoteNumber());
-                notes_changed = true;
+                notes_changed_ = true;
                 off_count += 1;
             } else {
                 // if we didn't see the NoteOn assume we were bypassed and put the message back in the buffer.
@@ -413,9 +406,9 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
     //DBGLOG("active notes processed")
 
-    if (pd.is_playing) {
+    if (pd.is_playing || !incoming_notes_.isEmpty() || !active_notes_.isEmpty() ) {
         DBGLOG("incoming = ", incoming_notes_.size(), "; active = ", active_notes_.size(),
-            "; changed = ", notes_changed, "; on = ", on_count, "; off = ", off_count, "; stop = ", stop_count
+            "; changed = ", notes_changed_, "; on = ", on_count, "; off = ", off_count, "; stop = ", stop_count
         )
     }
 
@@ -448,7 +441,7 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
             // if the note happens right at the end of the buffer, weird things happen.
             // So, don't play it now, wait for the next buffer.
             if (offset < sample_count - 2) {
-                auto msg = maybe_play_note(notes_changed, scheduled_notes_[0].slot_number, scheduled_notes_[0].start );
+                auto msg = maybe_play_note(scheduled_notes_[0].slot_number, scheduled_notes_[0].start );
                 if (msg) {
                     DBGLOG("--- Adding msg to buffer at offset ", offset);
                     midiBuffer.addEvent(*msg, offset);

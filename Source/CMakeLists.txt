@@ -48,6 +48,8 @@ target_sources(${BaseTargetName} PRIVATE
         AlgorithmEnum.hpp AlgorithmParameters.hpp Algorithm.hpp
         ParamData.hpp ParamData.cpp
         StarpEditor.hpp StarpEditor.cpp
+        EditorComponent/BoxComponent.hpp
+        EditorComponent/BoxComponent.cpp
         EditorComponent/AlgoChoiceComponent.hpp
         EditorComponent/AlgoChoiceComponent.cpp
         EditorComponent/RandomAlgoOptionsComponent.hpp

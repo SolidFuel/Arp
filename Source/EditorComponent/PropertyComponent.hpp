@@ -15,6 +15,7 @@
 #include "AlgoChoiceComponent.hpp"
 #include "RandomAlgoOptionsComponent.hpp"
 #include "LinearAlgoOptionsComponent.hpp"
+#include "BoxComponent.hpp"
 #include "../ProcessorParameters.hpp"
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -33,6 +34,8 @@ public:
 
 private:
 
+    using BCO = BoxComponent::Orientation;
+
     ProcessorParameters *params_ = nullptr;
 
     juce::Label speedLabel_;
@@ -44,25 +47,32 @@ private:
     juce::Slider gateSlider_;
     std::unique_ptr<SliderAttachment> gateAttachment_;
 
-    juce::Label veloLabel_;
-    juce::Slider veloSlider_;
-    std::unique_ptr<SliderAttachment> veloAttachment_;
-
     juce::Label probabilityLabel_;
     juce::Slider probabilitySlider_;
     std::unique_ptr<SliderAttachment> probabilityAttachment_;
 
+    BoxComponent veloBox_{BCO::Horizontal};
+    juce::Label veloLabel_;
+    juce::Slider veloSlider_;
+    std::unique_ptr<SliderAttachment> veloAttachment_;
+
+    BoxComponent veloRangeBox_{BCO::Horizontal};
     juce::Label veloRangeLabel_;
     juce::Slider veloRangeSlider_;
     std::unique_ptr<SliderAttachment> veloRangeAttachment_;
 
+    BoxComponent advanceBox_{BCO::Horizontal};
     juce::Label advanceLabel_;
     juce::Slider advanceSlider_;
     std::unique_ptr<SliderAttachment> advanceAttachment_;
 
+    BoxComponent delayBox_{BCO::Horizontal};
     juce::Label delayLabel_;
     juce::Slider delaySlider_;
     std::unique_ptr<SliderAttachment> delayAttachment_;
+
+    BoxComponent veloGroup_{BCO::Vertical, true};
+    BoxComponent timingGroup_{BCO::Vertical, true};
 
 //==========================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PropertyComponent)

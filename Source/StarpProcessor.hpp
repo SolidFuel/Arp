@@ -24,11 +24,6 @@
 #include "ValueListener.hpp"
 
 
-struct speed_value {
-    juce::String name;
-    double multiplier;
-};
-
 struct played_note {
     int note_value;
     double end_slot;

@@ -13,6 +13,9 @@
 #include "ProcessorParameters.hpp"
 #include "ParamData.hpp"
 
+const juce::String DEFAULT_SPEED = "1/8";
+
+
 //============================================================================
 
 ProcessorParameters::ProcessorParameters(juce::AudioProcessor& processor) {
@@ -20,8 +23,17 @@ ProcessorParameters::ProcessorParameters(juce::AudioProcessor& processor) {
 
     random_parameters.pick_new_key();
 
+    juce::StringArray speed_choices;
+    
+    speed_choices.ensureStorageAllocated(speed_parameter_values.size());
+    for (auto const &sv : speed_parameter_values) {
+        speed_choices.add(sv.name);
+    }
+
+    int default_speed = speed_choices.indexOf(DEFAULT_SPEED);
+
     // Hosted Parameters
-    speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", SpeedChoices, default_speed);
+    speed = new juce::AudioParameterChoice({"speed", 1}, "Speed", speed_choices, default_speed);
     layout.add(std::unique_ptr<juce::RangedAudioParameter>(speed));
 
     gate = new juce::AudioParameterFloat({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0);

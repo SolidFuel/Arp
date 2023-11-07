@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "AlgorithmEnum.hpp"
+#include "../AlgorithmEnum.hpp"
 #include <juce_audio_processors/juce_audio_processors.h>
 
 

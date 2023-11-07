@@ -47,7 +47,6 @@ public :
 
 
 private :
-    bool draw_border_ = false;
-
     Orientation orient_ = Vertical;
+    bool draw_border_ = false;
 };

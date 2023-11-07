@@ -13,11 +13,11 @@
 #pragma once
 
 #include "AlgoBase.hpp"
-#include "AlgorithmParameters.hpp"
+#include "../AlgorithmParameters.hpp"
 
-#include "ValueListener.hpp"
-#include "HashRandom.hpp"
-#include "Starp.hpp"
+#include "../ValueListener.hpp"
+#include "../HashRandom.hpp"
+#include "../Starp.hpp"
 
 
 

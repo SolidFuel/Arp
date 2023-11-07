@@ -68,7 +68,7 @@ juce::AudioProcessorEditor* StarpProcessor::createEditor() {
 //
 
 constexpr int CURRENT_STATE_VERSION = 2;
-constexpr char* XML_TOP_TAG = "Starp-Preset";
+const juce::String XML_TOP_TAG = "Starp-Preset";
 
 void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
 

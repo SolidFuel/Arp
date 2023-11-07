@@ -68,11 +68,11 @@ public :
 
 
 private :
+    Orientation orient_ = Horizontal;
+    int group_id_ = 1001;
     bool draw_border_ = false;
 
-    Orientation orient_ = Horizontal;
 
-    int group_id_ = 1001;
 
     juce::Array<juce::TextButton *> buttons;
 

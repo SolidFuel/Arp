@@ -13,10 +13,10 @@
 #pragma once
 
 #include "AlgoBase.hpp"
-#include "AlgorithmParameters.hpp"
+#include "../AlgorithmParameters.hpp"
 
-#include "ValueListener.hpp"
-#include "Starp.hpp"
+#include "../ValueListener.hpp"
+#include "../Starp.hpp"
 
 class SpiralAlgorithm : public AlgorithmBase {
 

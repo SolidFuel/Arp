@@ -93,6 +93,9 @@ void StarpProcessor::update_algorithm(int new_algo) {
             case Algorithm::Linear :
                 algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters_.linear_parameters);
                 break;
+            case Algorithm::Spiral :
+                algo_obj_ = std::make_unique<SpiralAlgorithm>(&parameters_.spiral_parameters);
+                break;
         }
 
     }

@@ -13,13 +13,13 @@
 
 #include "LinearAlgoOptionsComponent.hpp"
 
-constexpr int GROUP_ID = 1001;
+constexpr int POSITION_GID = 1001;
 
 LinearAlgoOptionsComponent::LinearAlgoOptionsComponent(LinearParameters * parms) : params_(parms) {
 
     up_button_.setButtonText("Up");
     up_button_.setClickingTogglesState(true);
-    up_button_.setRadioGroupId(GROUP_ID);
+    up_button_.setRadioGroupId(POSITION_GID);
     up_button_.setConnectedEdges(juce::Button::ConnectedEdgeFlags::ConnectedOnRight);
     addAndMakeVisible(up_button_);
     up_button_.onClick = [this]() { update_direction(); };
@@ -27,7 +27,7 @@ LinearAlgoOptionsComponent::LinearAlgoOptionsComponent(LinearParameters * parms)
 
     down_button_.setButtonText("Down");
     down_button_.setClickingTogglesState(true);
-    down_button_.setRadioGroupId(GROUP_ID);
+    down_button_.setRadioGroupId(POSITION_GID);
     down_button_.setConnectedEdges(juce::Button::ConnectedEdgeFlags::ConnectedOnLeft);
     addAndMakeVisible(down_button_);
 

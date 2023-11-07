@@ -45,3 +45,14 @@ struct LinearParameters {
     juce::Value restart{juce::var{false}};
     bool get_restart() const { return bool(restart.getValue()); }
 };
+
+struct SpiralParameters {
+    enum StartPosition { Bottom, Top };
+    enum Direction { In, Out, InOut, OutIn };
+
+    juce::Value start_position{Top};
+    int get_start_position() const { return int(start_position.getValue()); }
+
+    juce::Value direction{In};
+    int get_direction() const { return int(direction.getValue()); }
+};

@@ -12,12 +12,23 @@
 
 #pragma once
 
+#include "AlgorithmEnum.hpp"
+#include <juce_audio_processors/juce_audio_processors.h>
 
-#include "Algorithms/AlgoBase.hpp"
-#include "Algorithms/RandomAlgorithm.hpp"
-#include "Algorithms/LinearAlgorithm.hpp"
-#include "Algorithms/SpiralAlgorithm.hpp"
-#include "AlgorithmParameters.hpp"
 
-#include "Starp.hpp"
+class AlgorithmBase {
 
+public:
+
+    AlgorithmBase() = default;
+
+    virtual int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed)  = 0;
+
+    virtual void reset() {
+    }
+
+    virtual Algorithm get_algo() const = 0;
+
+    virtual ~AlgorithmBase() {}
+
+};

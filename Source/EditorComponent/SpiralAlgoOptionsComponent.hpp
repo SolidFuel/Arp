@@ -14,42 +14,48 @@
 
 #include "../AlgorithmParameters.hpp"
 #include "../ValueListener.hpp"
+#include "ButtonGroupComponent.hpp"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 
 
-class LinearAlgoOptionsComponent : public juce::Component {
+class SpiralAlgoOptionsComponent : public juce::Component {
 public :
-    LinearAlgoOptionsComponent(LinearParameters * parms);
+    SpiralAlgoOptionsComponent(SpiralParameters * parms);
 
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    ~LinearAlgoOptionsComponent();
+    ~SpiralAlgoOptionsComponent();
 
 
 private :
 
-    LinearParameters *params_;
+    SpiralParameters *params_;
 
     // These two are a radio group
-    juce::TextButton up_button_;
-    juce::TextButton down_button_;
+    juce::TextButton top_button_;
+    juce::TextButton bottom_button_;
 
-    juce::ToggleButton zigzag_button_;
-    juce::ToggleButton restart_button_;
+    // These 4 are a radio group
+
+    juce::TextButton in_button_;
+    juce::TextButton out_button_;
+    juce::TextButton inout_button_;
+    juce::TextButton outin_button_;
+
+    ButtonGroupComponent direction_group_;
 
     ValueListener direction_listener_;
-    ValueListener zigzag_listener_;
-    ValueListener restart_listener_;
+    ValueListener position_listener_;
 
-    void update_direction();
-    void update_zigzag();
-    void update_restart();
+    void update_direction(SpiralParameters::Direction direction);
+    void update_position();
 
 
 //==========================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinearAlgoOptionsComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpiralAlgoOptionsComponent)
+
 
 };

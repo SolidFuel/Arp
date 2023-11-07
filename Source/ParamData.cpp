@@ -17,12 +17,14 @@
 juce::Array<juce::var> AlgorithmIndexes {{
     juce::var{Algorithm::Random},
     juce::var{Algorithm::Linear},
+    juce::var{Algorithm::Spiral},
 
 }};
 
 juce::StringArray AlgorithmChoices{{
     "Random",
-    "Linear"
+    "Linear",
+    "Spiral",
 }};
 
  

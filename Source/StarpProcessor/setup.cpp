@@ -104,6 +104,12 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
     DBGLOG("  Wrote LinearParameters")
 
     //--------------------------------------
+    child = xml->createNewChildElement("SpiralParameters");
+    child->setAttribute("direction", parameters_.spiral_parameters.get_direction());
+    child->setAttribute("start_position", parameters_.spiral_parameters.get_start_position());
+    DBGLOG("  Wrote SpiralParameters")
+
+    //--------------------------------------
     DBGLOG("XML out =", xml->toString());
     copyXmlToBinary(*xml, destData);
     DBGLOG("  Done")
@@ -133,6 +139,16 @@ void StarpProcessor::parseCurrentXml(const juce::XmlElement * elem) {
     }
 
     DBGLOG(" -- linear done")
+
+    child = elem->getChildByName("SpiralParameters");
+    if (child) {
+        parameters_.spiral_parameters.direction = 
+            child->getIntAttribute("direction", SpiralParameters::Direction::In);
+        parameters_.spiral_parameters.start_position = 
+            child->getIntAttribute("start_position", SpiralParameters::StartPosition::Top);
+    }
+
+    DBGLOG(" -- spiral done")
 
     child = elem->getChildByName("RandomParameters");
     if (child) {

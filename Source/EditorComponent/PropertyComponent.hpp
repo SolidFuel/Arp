@@ -42,14 +42,19 @@ private:
     juce::Slider speedSlider_;
     std::unique_ptr<SliderAttachment> speedAttachment_;
 
+    juce::Label probabilityLabel_;
+    juce::Slider probabilitySlider_;
+    std::unique_ptr<SliderAttachment> probabilityAttachment_;
 
+    BoxComponent gateBox_{BCO::Horizontal};
     juce::Label gateLabel_;
     juce::Slider gateSlider_;
     std::unique_ptr<SliderAttachment> gateAttachment_;
 
-    juce::Label probabilityLabel_;
-    juce::Slider probabilitySlider_;
-    std::unique_ptr<SliderAttachment> probabilityAttachment_;
+    BoxComponent gateRangeBox_{BCO::Horizontal};
+    juce::Label gateRangeLabel_;
+    juce::Slider gateRangeSlider_;
+    std::unique_ptr<SliderAttachment> gateRangeAttachment_;
 
     BoxComponent veloBox_{BCO::Horizontal};
     juce::Label veloLabel_;
@@ -71,6 +76,7 @@ private:
     juce::Slider delaySlider_;
     std::unique_ptr<SliderAttachment> delayAttachment_;
 
+    BoxComponent gateGroup_{BCO::Vertical, true};
     BoxComponent veloGroup_{BCO::Vertical, true};
     BoxComponent timingGroup_{BCO::Vertical, true};
 

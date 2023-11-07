@@ -148,7 +148,7 @@ const position_data StarpProcessor::compute_block_position() {
 //============================================================================
 std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(double for_slot, double start_pos) {
 
-
+    DBGLOG("maybe_play_note called ", for_slot, " / ", start_pos)
     if (incoming_notes_.size() == 0) {
         algo_obj_->reset();
         return std::nullopt;
@@ -185,7 +185,10 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(double for_slot
                 1, new_note, (std::uint8_t) note_velocity
             );
         
-        double end_slot = start_pos + getGate();
+        double gate = getGate(for_slot);
+        DBGLOG("--- gate = ", gate)
+        double end_slot = start_pos + gate;
+
         active_notes_.add({new_note, end_slot});
         DBGLOG("--- start ", new_note, " @ ", start_pos, "; end = ", end_slot)
 
@@ -322,10 +325,11 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 #if STARP_DEBUG
     if (pd.is_playing || !midiBuffer.isEmpty() || !incoming_notes_.isEmpty() || !active_notes_.isEmpty() ) {
         std::stringstream x;
-        x << "START playing = " << pd.is_playing   << "; ppq_pos = " << pd.qn_position << "; pos_as_slots = " << pd.position_as_slots 
+        x << "START playing = " << pd.is_playing   << "; ppq_pos = " << pd.qn_position 
+            << "; pos_as_slots = " << pd.position_as_slots 
             << ";\n     slot_number = " << pd.slot_number
             << "; slot_fraction = " << std::setprecision(7) << pd.slot_fraction 
-            << ";\n     gate = " << getGate() << "; slots_in_buffer = " << slots_in_buffer
+            << ";\n     slots_in_buffer = " << slots_in_buffer
             << "; last_sched_slot = " << last_scheduled_slot_number_;
         dbgout->logMessage(x.str());
     }
@@ -474,7 +478,23 @@ double StarpProcessor:: getSpeedFactor() {
     return speed_parameter_values[parameters_.speed->getIndex()].multiplier;
 }
 
-double StarpProcessor::getGate() {
-    return parameters_.gate->get() / 100.0;
+double StarpProcessor::getGate(double slot) {
+
+    DBGLOG("--- getGate called = ", slot)
+    HashRandom rng{"Gate", parameters_.get_random_seed(), slot};
+    auto base = parameters_.gate->get() / 100.0f;
+    auto range = parameters_.gate_range->get() / 100.0f;
+
+    DBGLOG("---    base = ", base, "; range = ", range)
+
+    if (range > 0 ) {
+        auto gate = rng.nextFloat(base-range, base+range);
+        DBGLOG("---    returning ", gate)
+        return gate;
+    } else {
+        DBGLOG("---    returning ", base)
+        return base;
+    }
+
 }
 

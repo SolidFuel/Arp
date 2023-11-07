@@ -133,7 +133,7 @@ private:
     bool last_play_state_ = false;
 
     double getSpeedFactor();
-    double getGate();
+    double getGate(double slot);
 
     // Last time in millisecs that processBlock was called.
     // Used to detect bypass. If we haven't been called in

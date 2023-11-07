@@ -76,9 +76,9 @@ public :
 
     int getNextNote(double slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
 
-        DBGLOG("Spiral GETNEXTNOTE called slot = ", int(slot), " changed = ", notes_changed)
-
         auto note_count = notes.size();
+
+        DBGLOG("Spiral GETNEXTNOTE called slot = ", int(slot), "; changed = ", notes_changed, "; count = ", note_count)
 
         if (note_count == 0) {
             return -1;

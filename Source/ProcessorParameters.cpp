@@ -39,6 +39,9 @@ ProcessorParameters::ProcessorParameters(juce::AudioProcessor& processor) {
     gate = new juce::AudioParameterFloat({ "gate", 2 },  "Gate %", 10.0, 200.0, 100.0);
     layout.add(std::unique_ptr<juce::RangedAudioParameter>(gate));
 
+    gate_range = new juce::AudioParameterFloat({ "gate_range", 3 },  "Gate Range", 0.0, 100.0, 0.0);
+    layout.add(std::unique_ptr<juce::RangedAudioParameter>(gate_range));
+
     probability = new juce::AudioParameterInt({"probability", 4}, "Probability", 0, 100, 100);
     layout.add(std::unique_ptr<juce::RangedAudioParameter>(probability));
 

@@ -33,6 +33,7 @@
         // These are automatable and will live in the Value Tree
         juce::AudioParameterChoice* speed;
         juce::AudioParameterFloat*  gate;
+        juce::AudioParameterFloat*  gate_range;
         juce::AudioParameterInt*    velocity;
         juce::AudioParameterInt*    velo_range;
         juce::AudioParameterInt*    probability;

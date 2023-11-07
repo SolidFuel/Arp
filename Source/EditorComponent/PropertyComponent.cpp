@@ -27,15 +27,6 @@ PropertyComponent::PropertyComponent (ProcessorParameters *params) : params_(par
     speedAttachment_.reset (new SliderAttachment (*apvts, "speed", speedSlider_));
     addAndMakeVisible(speedSlider_);
 
-    // --------- Gate ------------
-    gateLabel_.setText ("Gate %", juce::dontSendNotification);
-    gateLabel_.setTooltip("How long the note will be on as a proportion of the speed.");
-    gateSlider_.setTextValueSuffix("%");
-    gateSlider_.setTooltip("How long the note will be on as a proportion of the speed.");
-    gateAttachment_.reset (new SliderAttachment (*apvts, "gate", gateSlider_));
-    addAndMakeVisible (gateLabel_);
-    addAndMakeVisible(gateSlider_);
-
     // --------- Probability ------------
     probabilityLabel_.setText ("Probability", juce::dontSendNotification);
     probabilityLabel_.setTooltip("Chance of a note being generated");
@@ -45,6 +36,25 @@ PropertyComponent::PropertyComponent (ProcessorParameters *params) : params_(par
 
     addAndMakeVisible (probabilityLabel_);
     addAndMakeVisible(probabilitySlider_);
+
+    // --------- Gate ------------
+    gateLabel_.setText ("Gate %", juce::dontSendNotification);
+    gateLabel_.setTooltip("How long the note will be on as a proportion of the speed.");
+    gateSlider_.setTextValueSuffix("%");
+    gateSlider_.setTooltip("How long the note will be on as a proportion of the speed.");
+    gateAttachment_.reset (new SliderAttachment (*apvts, "gate", gateSlider_));
+
+    gateBox_.addAndMakeVisible(gateLabel_);
+    gateBox_.addAndMakeVisible(gateSlider_);
+
+    // --------- Gate Range ------------
+    gateRangeLabel_.setText ("Range", juce::dontSendNotification);
+    gateRangeLabel_.setTooltip("Range in variance (+/-) for the gate");
+    gateRangeSlider_.setTooltip("Range in variance (+/-) for the gate");
+    gateRangeAttachment_.reset (new SliderAttachment (*apvts, "gate_range", gateRangeSlider_));
+
+    gateRangeBox_.addAndMakeVisible(gateRangeLabel_);
+    gateRangeBox_.addAndMakeVisible(gateRangeSlider_);
 
     // --------- Velocity ------------
     veloLabel_.setText ("Velocity", juce::dontSendNotification);
@@ -83,6 +93,13 @@ PropertyComponent::PropertyComponent (ProcessorParameters *params) : params_(par
 
     delayBox_.addAndMakeVisible (delayLabel_);
     delayBox_.addAndMakeVisible(delaySlider_);
+
+    // --------- Gate Group ------------
+    gateGroup_.addAndMakeVisible(gateBox_);
+    gateGroup_.addAndMakeVisible(gateRangeBox_);
+    gateGroup_.setText("Gate");
+
+    addAndMakeVisible(gateGroup_);
 
     // --------- Velocity Group ------------
     veloGroup_.addAndMakeVisible(veloBox_);
@@ -124,6 +141,9 @@ void PropertyComponent::resized() {
     grid.justifyItems = juce::Grid::JustifyItems::start;
     grid.templateColumns = { Track (Fr (1)), Track(Fr(4)), Track (Fr (1)) };
 
+    juce::Array<Track> sub_box_layout   = { Track (Fr (1)), Track(Fr(5)) };
+    juce::Array<Track> sub_group_layout = { Track (Fr (1)), Track(Fr(1)) };
+
     //----------------------------------------
 
     grid.templateRows.add(Track (Fr (10)));
@@ -131,23 +151,26 @@ void PropertyComponent::resized() {
     grid.items.add(GridItem(speedSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.templateRows.add(Track (Fr (10)));
-    grid.items.add(GridItem(gateLabel_));
-    grid.items.add(GridItem(gateSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
-
-    grid.templateRows.add(Track (Fr (10)));
     grid.items.add(GridItem(probabilityLabel_));
     grid.items.add(GridItem(probabilitySlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
-    veloBox_.layoutTemplate = { Track (Fr (1)), Track(Fr(5)) };
-    veloRangeBox_.layoutTemplate = { Track (Fr (1)), Track(Fr(5)) };
-    veloGroup_.layoutTemplate = { Track (Fr (1)), Track(Fr(1)) };
+    gateBox_.layoutTemplate = sub_box_layout;
+    gateRangeBox_.layoutTemplate = sub_box_layout;
+    gateGroup_.layoutTemplate = sub_group_layout;
+
+    grid.templateRows.add(Track (Fr (23)));
+    grid.items.add(GridItem(gateGroup_).withArea(GridItem::Span(1), GridItem::Span(3)));
+
+    veloBox_.layoutTemplate = sub_box_layout;
+    veloRangeBox_.layoutTemplate = sub_box_layout;
+    veloGroup_.layoutTemplate = sub_group_layout;
 
     grid.templateRows.add(Track (Fr (23)));
     grid.items.add(GridItem(veloGroup_).withArea(GridItem::Span(1), GridItem::Span(3)));
 
-    advanceBox_.layoutTemplate = { Track (Fr (1)), Track(Fr(5)) };
-    delayBox_.layoutTemplate = { Track (Fr (1)), Track(Fr(5)) };
-    timingGroup_.layoutTemplate = { Track (Fr (1)), Track(Fr(1)) };
+    advanceBox_.layoutTemplate = sub_box_layout;
+    delayBox_.layoutTemplate = sub_box_layout;
+    timingGroup_.layoutTemplate = sub_group_layout;
 
     grid.templateRows.add(Track (Fr (23)));
     grid.items.add(GridItem(timingGroup_).withArea(GridItem::Span(1), GridItem::Span(3)));

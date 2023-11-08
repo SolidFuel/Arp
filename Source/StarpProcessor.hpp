@@ -132,7 +132,7 @@ private:
 
     bool last_play_state_ = false;
 
-    double getSpeedFactor();
+    double getSpeedFactor(double bpm, const juce::AudioPlayHead::TimeSignature &time_sig);
     double getGate(double slot);
 
     // Last time in millisecs that processBlock was called.

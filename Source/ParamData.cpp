@@ -52,3 +52,6 @@ juce::Array<speed_value> speed_parameter_values = {
     speed_value{"1/1q"  , 3.2 },
     speed_value{"1/1"   , 4.0 },
 };
+
+
+juce::StringArray SpeedTypes{{ "note", "bar", "msec" }};

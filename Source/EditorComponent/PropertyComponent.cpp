@@ -14,18 +14,45 @@
 #include "../Starp.hpp"
 
 
-PropertyComponent::PropertyComponent (ProcessorParameters *params) : params_(params) {
+
+
+PropertyComponent::PropertyComponent (ProcessorParameters *params) : 
+        params_(params)
+{
 
     DBGLOG("Setting up PropertyComponent");
     auto apvts = params->apvts.get();
 
     //==============================================
 
-    speedLabel_.setText ("Speed", juce::dontSendNotification);
-    addAndMakeVisible (speedLabel_);
-    speedSlider_.setTooltip("How often a note will (possibly) be generated");
-    speedAttachment_.reset (new SliderAttachment (*apvts, "speed", speedSlider_));
-    addAndMakeVisible(speedSlider_);
+    // --------- Speed ------------
+    
+
+    speedNoteSlider_.setTooltip("How often a note will (possibly) be generated as a note value.");
+    speedNoteAttachment_.reset (new SliderAttachment (*apvts, ProcessorParameters::SPEED_NOTE_ID, speedNoteSlider_));
+    speedComponent_.add(speedNoteSlider_);
+    speedBarSlider_.setTooltip("How often a note will (possibly) be generated (in notes per bar).");
+    speedBarAttachment_.reset (new SliderAttachment (*apvts, ProcessorParameters::SPEED_BAR_ID, speedBarSlider_));
+    speedComponent_.add(speedBarSlider_);
+    speedMSecSlider_.setTooltip("How often a note will (possibly) be generated in milliseconds");
+    speedMSecAttachment_.reset (new SliderAttachment (*apvts, ProcessorParameters::SPEED_MSEC_ID, speedMSecSlider_));
+    speedComponent_.add(speedMSecSlider_);
+
+
+    speed_type_value_.referTo(params_->apvts->getParameterAsValue(ProcessorParameters::SPEED_TYPE_ID));
+    speed_type_listener_.onChange = [this](juce::Value &v) {
+        update_speed_type(SpeedType(int(v.getValue())));
+    };
+    update_speed_type(SpeedType(int(speed_type_value_.getValue())));
+    speed_type_value_.addListener(&speed_type_listener_);
+
+    speedType_.setValue(speed_type_value_);
+
+    speedBox_.add(speedType_, 0, 8);
+    speedBox_.add(speedComponent_);
+    speedBox_.setText("Speed");
+    addAndMakeVisible(speedBox_);
+
 
     // --------- Probability ------------
     probabilityLabel_.setText ("Probability", juce::dontSendNotification);
@@ -34,7 +61,7 @@ PropertyComponent::PropertyComponent (ProcessorParameters *params) : params_(par
     probabilitySlider_.setTooltip("Chance of a note being generated");
     probabilityAttachment_.reset (new SliderAttachment (*apvts, "probability", probabilitySlider_));
 
-    addAndMakeVisible (probabilityLabel_);
+    addAndMakeVisible(probabilityLabel_);
     addAndMakeVisible(probabilitySlider_);
 
     // --------- Gate ------------
@@ -50,6 +77,7 @@ PropertyComponent::PropertyComponent (ProcessorParameters *params) : params_(par
     // --------- Gate Range ------------
     gateRangeLabel_.setText ("Range", juce::dontSendNotification);
     gateRangeLabel_.setTooltip("Range in variance (+/-) for the gate");
+    gateRangeSlider_.setTextValueSuffix("%");
     gateRangeSlider_.setTooltip("Range in variance (+/-) for the gate");
     gateRangeAttachment_.reset (new SliderAttachment (*apvts, "gate_range", gateRangeSlider_));
 
@@ -114,10 +142,19 @@ PropertyComponent::PropertyComponent (ProcessorParameters *params) : params_(par
     timingGroup_.setText("Timing");
 
     addAndMakeVisible(timingGroup_);
-   
 
 }
 
+//==============================================================================
+void PropertyComponent::update_speed_type(SpeedType sp) {
+
+    DBGLOG("PropertyComponent::update_speed_type called = ", sp)
+
+    speedComponent_.setActiveIndex(sp);
+
+    speedType_.refresh();
+
+}
 
 //==============================================================================
 void PropertyComponent::paint (juce::Graphics& g) {
@@ -136,44 +173,47 @@ void PropertyComponent::resized() {
     using Fr = juce::Grid::Fr;
     using GridItem = juce::GridItem;
 
+    juce::Array<Track> column_layout   = { Track (Fr (10)), Track(Fr(50)) };
+    juce::Array<Track> sub_group_layout = { Track (Fr (1)), Track(Fr(1)) };
+
     grid.alignItems = juce::Grid::AlignItems::center;
     grid.justifyContent = juce::Grid::JustifyContent::start;
     grid.justifyItems = juce::Grid::JustifyItems::start;
-    grid.templateColumns = { Track (Fr (1)), Track(Fr(4)), Track (Fr (1)) };
+    
+    grid.templateColumns = column_layout;
 
-    juce::Array<Track> sub_box_layout   = { Track (Fr (1)), Track(Fr(5)) };
-    juce::Array<Track> sub_group_layout = { Track (Fr (1)), Track(Fr(1)) };
 
     //----------------------------------------
 
     grid.templateRows.add(Track (Fr (10)));
-    grid.items.add(GridItem(speedLabel_));
-    grid.items.add(GridItem(speedSlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
-
-    grid.templateRows.add(Track (Fr (10)));
     grid.items.add(GridItem(probabilityLabel_));
-    grid.items.add(GridItem(probabilitySlider_).withArea(GridItem::Span(1), GridItem::Span(2)));
+    grid.items.add(GridItem(probabilitySlider_));
 
-    gateBox_.layoutTemplate = sub_box_layout;
-    gateRangeBox_.layoutTemplate = sub_box_layout;
+    speedBox_.layoutTemplate = column_layout;
+
+    grid.templateRows.add(Track (Fr (13)));
+    grid.items.add(GridItem(speedBox_).withArea(GridItem::Span(1), GridItem::Span(2)));
+
+    gateBox_.layoutTemplate = column_layout;
+    gateRangeBox_.layoutTemplate = column_layout;
     gateGroup_.layoutTemplate = sub_group_layout;
 
     grid.templateRows.add(Track (Fr (23)));
-    grid.items.add(GridItem(gateGroup_).withArea(GridItem::Span(1), GridItem::Span(3)));
+    grid.items.add(GridItem(gateGroup_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
-    veloBox_.layoutTemplate = sub_box_layout;
-    veloRangeBox_.layoutTemplate = sub_box_layout;
+    veloBox_.layoutTemplate = column_layout;
+    veloRangeBox_.layoutTemplate = column_layout;
     veloGroup_.layoutTemplate = sub_group_layout;
 
     grid.templateRows.add(Track (Fr (23)));
-    grid.items.add(GridItem(veloGroup_).withArea(GridItem::Span(1), GridItem::Span(3)));
+    grid.items.add(GridItem(veloGroup_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
-    advanceBox_.layoutTemplate = sub_box_layout;
-    delayBox_.layoutTemplate = sub_box_layout;
+    advanceBox_.layoutTemplate = column_layout;
+    delayBox_.layoutTemplate = column_layout;
     timingGroup_.layoutTemplate = sub_group_layout;
 
     grid.templateRows.add(Track (Fr (23)));
-    grid.items.add(GridItem(timingGroup_).withArea(GridItem::Span(1), GridItem::Span(3)));
+    grid.items.add(GridItem(timingGroup_).withArea(GridItem::Span(1), GridItem::Span(2)));
 
     grid.performLayout (getLocalBounds());
     

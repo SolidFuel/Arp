@@ -109,6 +109,7 @@ const position_data StarpProcessor::compute_block_position() {
 
     double bpm = 120.0;
     double quarter_notes_per_beat = 1;
+    juce::AudioPlayHead::TimeSignature time_sig{4, 4};
 
     auto *play_head = getPlayHead();
 
@@ -121,15 +122,18 @@ const position_data StarpProcessor::compute_block_position() {
             if (hostBpm) {
                 bpm = *hostBpm;
             }
-            auto time_sig = position->getTimeSignature();
-            if (time_sig) {
-                quarter_notes_per_beat = 4.0 / time_sig->denominator;
+            auto host_time_sig = position->getTimeSignature();
+            if (host_time_sig) {
+                time_sig = *host_time_sig;
             }
+
+            quarter_notes_per_beat = 4.0 / time_sig.denominator;
+            pd.speed = getSpeedFactor(bpm, time_sig);
 
             auto opt_pos_qn = position->getPpqPosition();
             if (opt_pos_qn) {
                 // position in slots
-                pd.set_position(*opt_pos_qn, getSpeedFactor());
+                pd.set_position(*opt_pos_qn);
             }
         }
     }
@@ -138,7 +142,8 @@ const position_data StarpProcessor::compute_block_position() {
 
     if (! pd.is_playing ) {
         // need to synthesize the data
-        pd.set_position(fake_clock_sample_count_ / pd.samples_per_qn, getSpeedFactor());
+        pd.speed = getSpeedFactor(bpm, time_sig);
+        pd.set_position(fake_clock_sample_count_ / pd.samples_per_qn);
     }
 
     return pd;
@@ -281,9 +286,9 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
     position_data pd = compute_block_position();
 
-    double slots_in_buffer = (double(sample_count) / double(pd.samples_per_qn)) / getSpeedFactor();
+    double slots_in_buffer = (double(sample_count) / double(pd.samples_per_qn)) / pd.speed;
     
-    auto slot_duration = static_cast<int>(std::ceil(double(pd.samples_per_qn) * getSpeedFactor()));
+    auto slot_duration = static_cast<int>(std::ceil(double(pd.samples_per_qn) * pd.speed));
 
     // auto this_call_time = juce::Time::currentTimeMillis();
 
@@ -473,9 +478,38 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
 
 //============================================================================
+// returns the "speed" of notes based on the value of a quarter note = 1
+double StarpProcessor:: getSpeedFactor(double bpm, const juce::AudioPlayHead::TimeSignature &time_sig) {
+    auto speed_type = parameters_.speed_type->getIndex();
+    double speed_factor = 1;
 
-double StarpProcessor:: getSpeedFactor() {
-    return speed_parameter_values[parameters_.speed->getIndex()].multiplier;
+    double qn_per_beat = (4.0 / time_sig.denominator);
+
+    switch (speed_type) {
+        case SpeedType::Note :
+            // The array already has the speed relative to a quarter note.
+            speed_factor = speed_parameter_values[parameters_.speed->getIndex()].multiplier;
+            break;
+        case SpeedType::Bar :
+        {
+            //  3/4 =  3 * (4/4) = 3
+            // 12/8 = 12 * (4/8) = 6
+            //  2/2 =  2 * (4/2) = 4
+            auto qn_per_bar = time_sig.numerator * qn_per_beat;
+            speed_factor = qn_per_bar / parameters_.speed_bar->get();
+        }
+            break;
+        case SpeedType::MSec :
+        {
+            auto ms_per_qn = 1000.0 / ( (bpm / 60.0) * qn_per_beat );
+            speed_factor = parameters_.speed_ms->get() / ms_per_qn;
+        }
+            break;
+        default :
+            jassertfalse;
+    }
+
+    return speed_factor;
 }
 
 double StarpProcessor::getGate(double slot) {

@@ -32,6 +32,11 @@ void BoxComponent::paint(juce::Graphics& g) {
     }
 }
 
+void BoxComponent::add(juce::Component &c, int inset_x, int inset_y) {
+    addAndMakeVisible(c);
+    insets.add({inset_x, inset_y});
+    
+}
 
 
 void BoxComponent::resized() {
@@ -57,8 +62,15 @@ void BoxComponent::resized() {
         grid.templateColumns.add(Track (Fr (1)));
     }
 
+    int index = 0;
     for(auto *c : getChildren()) {
-        grid.items.add(GridItem(c));
+        auto margin = juce::GridItem::Margin::Margin();
+        if (index < insets.size()) {
+            auto inset = insets[index];
+            margin.left = margin.right = float(inset.first);
+            margin.top = margin.bottom = float(inset.second);
+        }
+        grid.items.add(GridItem(c).withMargin(margin));
     }
 
     auto bounds = getLocalBounds();

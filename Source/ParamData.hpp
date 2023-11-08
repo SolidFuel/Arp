@@ -25,5 +25,12 @@ struct speed_value {
     double multiplier;
 };
 
-
 extern juce::Array<speed_value> speed_parameter_values;
+
+//========================================================================
+
+enum SpeedType {
+    Note, Bar, MSec
+};
+
+extern juce::StringArray SpeedTypes;

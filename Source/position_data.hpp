@@ -29,11 +29,15 @@ struct position_data {
     int samples_per_qn;
     bool is_playing = false;
 
-    void set_position(double new_position, double speed_factor) {
+    double speed = 1.0;
+
+    // **NOTE** set speed before calling this function!!
+    //
+    void set_position(double new_position) {
 
         qn_position = new_position;
 
-        position_as_slots = new_position / speed_factor;
+        position_as_slots = new_position / speed;
 
         slot_number = std::floor(position_as_slots);
 

@@ -12,9 +12,11 @@
 
 #pragma once
 
+#include "OverlayComponent.hpp"
 #include "AlgoChoiceComponent.hpp"
 #include "RandomAlgoOptionsComponent.hpp"
 #include "LinearAlgoOptionsComponent.hpp"
+#include "ButtonGroupComponent.hpp"
 #include "BoxComponent.hpp"
 #include "../ProcessorParameters.hpp"
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -22,6 +24,58 @@
 
 using  SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 
+class SpeedTypeChoiceComponent : public juce::ChoicePropertyComponent {
+private :
+    juce::Value value_ptr_;
+    ValueListener listener_;
+
+public : 
+    SpeedTypeChoiceComponent() :
+        juce::ChoicePropertyComponent("")
+    {
+            
+        choices = SpeedTypes;
+        listener_.onChange = [this](juce::Value &){ refresh(); };
+        refresh();
+    }
+
+    void setValue(juce::Value &ptr) {
+        value_ptr_.referTo(ptr);
+        value_ptr_.addListener(&listener_);
+    }
+
+    virtual void setIndex(int newIndex)	override {
+        value_ptr_.setValue(newIndex);
+    }
+    virtual int getIndex()	const override {
+        return int(value_ptr_.getValue());
+    }
+
+
+    /*
+     * Don't paint the label
+     */
+
+    void paint (juce::Graphics& g) override {
+        auto& lf = getLookAndFeel();
+
+        lf.drawPropertyComponentBackground (g, getWidth(), getHeight(), *this);
+    }
+
+    void resized() override {
+        if (auto c = getChildComponent (0)) {
+
+            auto bounds = getLocalBounds();
+            bounds.reduce(8, 0);
+            c->setBounds(bounds);
+        }
+    }
+
+
+};
+
+
+//==============================================================
 class PropertyComponent : public juce::Component {
 
 
@@ -38,9 +92,24 @@ private:
 
     ProcessorParameters *params_ = nullptr;
 
-    juce::Label speedLabel_;
-    juce::Slider speedSlider_;
-    std::unique_ptr<SliderAttachment> speedAttachment_;
+    juce::Value speed_type_value_{SpeedType::Note};
+
+
+    BoxComponent speedBox_{BCO::Horizontal, true};
+
+    SpeedTypeChoiceComponent speedType_;
+
+    OverlayComponent<juce::Slider> speedComponent_;
+
+    juce::Slider speedNoteSlider_;
+    juce::Slider speedBarSlider_;
+    juce::Slider speedMSecSlider_;
+    std::unique_ptr<SliderAttachment> speedNoteAttachment_;
+    std::unique_ptr<SliderAttachment> speedBarAttachment_;
+    std::unique_ptr<SliderAttachment> speedMSecAttachment_;
+
+    ValueListener speed_type_listener_;
+    juce::Slider *current_speed_slider_;
 
     juce::Label probabilityLabel_;
     juce::Slider probabilitySlider_;
@@ -79,6 +148,8 @@ private:
     BoxComponent gateGroup_{BCO::Vertical, true};
     BoxComponent veloGroup_{BCO::Vertical, true};
     BoxComponent timingGroup_{BCO::Vertical, true};
+
+    void update_speed_type(SpeedType st);
 
 //==========================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PropertyComponent)

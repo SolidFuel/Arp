@@ -29,6 +29,8 @@ public :
 
     juce::Array<juce::Grid::TrackInfo> layoutTemplate;
 
+    void add(juce::Component &c, int inset_x = 0, int inset_y = 0);
+
     void resized() override ;
 
     void setTemplate(juce::Array<juce::Grid::TrackInfo> &tmpl);
@@ -49,4 +51,6 @@ public :
 private :
     Orientation orient_ = Vertical;
     bool draw_border_ = false;
+
+    juce::Array<std::pair<int, int>> insets;
 };

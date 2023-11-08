@@ -52,6 +52,7 @@ target_sources(${BaseTargetName} PRIVATE
         AlgorithmEnum.hpp AlgorithmParameters.hpp Algorithm.hpp
         ParamData.hpp ParamData.cpp
         StarpEditor.hpp StarpEditor.cpp
+        EditorComponent/OverlayComponent.hpp
         EditorComponent/BoxComponent.hpp
         EditorComponent/BoxComponent.cpp
         EditorComponent/ButtonGroupComponent.hpp

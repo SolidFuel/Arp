@@ -14,7 +14,7 @@
 #include "ParamData.hpp"
 
 const juce::String DEFAULT_NOTE_SPEED = "1/8";
-constexpr int DEFAULT_BAR_SPEED = 8;
+constexpr float DEFAULT_BAR_SPEED = 8;
 constexpr float DEFAULT_MS_SPEED = 250;
 
 
@@ -41,6 +41,16 @@ ProcessorParameters::ProcessorParameters(juce::AudioProcessor& processor) {
 
     int default_speed = speed_choices.indexOf(DEFAULT_NOTE_SPEED);
 
+    auto reverse_bar_range = juce::NormalisableRange<float>(1.0f, 32.0f,
+        [] (auto rangeStart, auto rangeEnd, auto normalised)
+            { return juce::jmap (normalised, rangeEnd, rangeStart); },
+        [] (auto rangeStart, auto rangeEnd, auto value)
+            { return juce::jmap (value, rangeEnd, rangeStart, 0.0f, 1.0f); },
+        [] (auto, auto, auto value)
+            { return std::round(value); });
+
+    auto bar_attributes = juce::AudioParameterFloatAttributes()
+            .withStringFromValueFunction([](auto value, auto) { return juce::String(value, 0); });
 
     // Hosted Parameters
     speed = new juce::AudioParameterChoice({SPEED_NOTE_ID, 1}, "Speed in Notes", speed_choices, default_speed);
@@ -72,12 +82,15 @@ ProcessorParameters::ProcessorParameters(juce::AudioProcessor& processor) {
     speed_type = new juce::AudioParameterChoice({SPEED_TYPE_ID, 9}, "Speed Type", SpeedTypes, SpeedType::Note);
     layout.add(std::unique_ptr<juce::RangedAudioParameter>(speed_type));
 
-    speed_bar = new juce::AudioParameterInt({SPEED_BAR_ID, 10}, "Speed per Bars", 1, 32, DEFAULT_BAR_SPEED,
-            juce::AudioParameterIntAttributes().withInverted(true));
+    speed_bar = new juce::AudioParameterFloat({SPEED_BAR_ID, 10}, "Speed per Bars", 
+            reverse_bar_range, DEFAULT_BAR_SPEED, bar_attributes);
     layout.add(std::unique_ptr<juce::RangedAudioParameter>(speed_bar));
 
     speed_ms = new juce::AudioParameterFloat({ SPEED_MSEC_ID, 11 }, "Speed in msec", 10, 1000, DEFAULT_MS_SPEED);
     layout.add(std::unique_ptr<juce::RangedAudioParameter>(speed_ms));
+
+
+
 
 
 

@@ -45,7 +45,7 @@ struct ProcessorParameters  {
     juce::AudioParameterFloat*  timing_delay;
     juce::AudioParameterFloat*  timing_advance;
     juce::AudioParameterChoice* speed_type;
-    juce::AudioParameterInt*    speed_bar;
+    juce::AudioParameterFloat*  speed_bar;
     juce::AudioParameterFloat*  speed_ms;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;

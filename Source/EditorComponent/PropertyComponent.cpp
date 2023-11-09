@@ -47,6 +47,7 @@ PropertyComponent::PropertyComponent (ProcessorParameters *params) :
     speed_type_value_.addListener(&speed_type_listener_);
 
     speedType_.setValue(speed_type_value_);
+    speedType_.refresh();
 
     speedBox_.add(speedType_, 0, 8);
     speedBox_.add(speedComponent_);

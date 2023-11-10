@@ -24,11 +24,6 @@
 #include "ValueListener.hpp"
 
 
-struct speed_value {
-    juce::String name;
-    double multiplier;
-};
-
 struct played_note {
     int note_value;
     double end_slot;
@@ -101,7 +96,7 @@ public:
 private:
 
 
-    ProcessorParameters parameters;
+    ProcessorParameters parameters_;
 
     //==============================================================================
 
@@ -117,6 +112,10 @@ private:
     // to schedule something.
     juce::SortedSet<int> incoming_notes_;
 
+    // Has incoming_notes_ changed since the last
+    // time we called the note picking algoirthm ?
+    bool notes_changed_ = false;
+
     // Notes we have sent the note-on for but need to wait
     // to send the note-off
     juce::Array<played_note> active_notes_;
@@ -129,12 +128,12 @@ private:
     void update_algorithm(int new_algo);
     std::unique_ptr<AlgorithmBase> algo_obj_;
 
-    double last_scheduled_slot_number = -1.0;
+    double last_scheduled_slot_number_ = -1.0;
 
     bool last_play_state_ = false;
 
-    double getSpeedFactor();
-    double getGate();
+    double getSpeedFactor(double bpm, const juce::AudioPlayHead::TimeSignature &time_sig);
+    double getGate(double slot);
 
     // Last time in millisecs that processBlock was called.
     // Used to detect bypass. If we haven't been called in
@@ -148,11 +147,11 @@ private:
     double fake_clock_sample_count_ = 0;
 
     const position_data compute_block_position();
-    std::optional<juce::MidiMessage>maybe_play_note(bool notes_changed, double for_slot, double start_pos);
+    std::optional<juce::MidiMessage>maybe_play_note(double for_slot, double start_pos);
 
     void schedule_note(double current_pos, double slot_number, bool can_advance);
 
-    void reset_data();
+    void reset_data(bool clear_incoming = true);
 
     void parseCurrentXml(const juce::XmlElement * elem);
     void parseOriginalXml(const juce::XmlElement * elem);
@@ -162,7 +161,7 @@ private:
     ValueListener algo_listener_;
 
 public:
-    ProcessorParameters* getParameters() { return &parameters; }
+    ProcessorParameters* getParameters() { return &parameters_; }
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)

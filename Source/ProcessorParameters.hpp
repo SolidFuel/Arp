@@ -18,30 +18,40 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
  
-    
-    struct ProcessorParameters  {      
 
-        // These are not automatable.  
-        RandomParameters random_parameters;
-        juce::int64 get_random_seed() const { return juce::int64(random_parameters.seed_value.getValue()); }
-        LinearParameters linear_parameters;
+struct ProcessorParameters  {      
 
-        juce::Value algorithm_index{juce::var{Algorithm::Random}};
-        int get_algo_index() const { return int(algorithm_index.getValue()); }
+    static const juce::String SPEED_TYPE_ID;
+    static const juce::String SPEED_NOTE_ID;
+    static const juce::String SPEED_BAR_ID;
+    static const juce::String SPEED_MSEC_ID;
 
-        // These are automatable and will live in the Value Tree
-        juce::AudioParameterChoice* speed;
-        juce::AudioParameterFloat*  gate;
-        juce::AudioParameterInt*    velocity;
-        juce::AudioParameterInt*    velo_range;
-        juce::AudioParameterInt*    probability;
-        juce::AudioParameterFloat*  timing_delay;
-        juce::AudioParameterFloat*  timing_advance;
+    // These are not automatable.  
+    RandomParameters random_parameters;
+    juce::int64 get_random_seed() const { return juce::int64(random_parameters.seed_value.getValue()); }
+    LinearParameters linear_parameters;
+    SpiralParameters spiral_parameters;
 
-        std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
+    juce::Value algorithm_index{juce::var{Algorithm::Random}};
+    int get_algo_index() const { return int(algorithm_index.getValue()); }
 
-        ProcessorParameters(juce::AudioProcessor& processor);
+    // These are automatable and will live in the Value Tree
+    juce::AudioParameterChoice* speed;
+    juce::AudioParameterFloat*  gate;
+    juce::AudioParameterFloat*  gate_range;
+    juce::AudioParameterInt*    velocity;
+    juce::AudioParameterInt*    velo_range;
+    juce::AudioParameterInt*    probability;
+    juce::AudioParameterFloat*  timing_delay;
+    juce::AudioParameterFloat*  timing_advance;
+    juce::AudioParameterChoice* speed_type;
+    juce::AudioParameterFloat*  speed_bar;
+    juce::AudioParameterFloat*  speed_ms;
 
-        void pick_new_key();
+    std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
 
-    };
+    ProcessorParameters(juce::AudioProcessor& processor);
+
+    void pick_new_key();
+
+};

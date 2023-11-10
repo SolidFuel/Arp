@@ -16,10 +16,10 @@
 #include "Starp.hpp"
 
 
-constexpr int WIDTH = 600;
+constexpr int WIDTH = 620;
 constexpr int HEADER_HEIGHT = 50;
 constexpr int ALGORITHM_HEIGHT = 75;
-constexpr int PROPERTY_HEIGHT = 275;
+constexpr int PROPERTY_HEIGHT = 420;
 constexpr int HEIGHT = HEADER_HEIGHT + ALGORITHM_HEIGHT + PROPERTY_HEIGHT;
 constexpr int MARGIN = 5;
 

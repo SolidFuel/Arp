@@ -15,7 +15,8 @@
 
 AlgorithmComponent::AlgorithmComponent (ProcessorParameters *params) : params_(params),
     randomComponent_(&params->random_parameters),
-    linearComponent_(&params->linear_parameters) {
+    linearComponent_(&params->linear_parameters),
+    spiralComponent_(&params->spiral_parameters) {
 
     DBGLOG("AlgorithmComponent constructor called");
 
@@ -27,6 +28,7 @@ AlgorithmComponent::AlgorithmComponent (ProcessorParameters *params) : params_(p
     
     addChildComponent(randomComponent_);
     addChildComponent(linearComponent_);
+    addChildComponent(spiralComponent_);
     
     DBGLOG("Setting up AlgorithmComponent CHECK 1");
 
@@ -42,6 +44,7 @@ void AlgorithmComponent::valueChanged(juce::Value &) {
 
     randomComponent_.setVisible(algo == Algorithm::Random);
     linearComponent_.setVisible(algo == Algorithm::Linear);
+    spiralComponent_.setVisible(algo == Algorithm::Spiral);
 
     resized();
 
@@ -50,7 +53,6 @@ void AlgorithmComponent::valueChanged(juce::Value &) {
 //==============================================================================
 void AlgorithmComponent::paint (juce::Graphics& g) {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    DBGLOG("AlgorithmComponent::paint called")
     g.fillAll (getLookAndFeel().findColour (juce::PropertyComponent::backgroundColourId));
 
 }
@@ -82,7 +84,6 @@ void AlgorithmComponent::resized() {
     //----------------------------------------
     // Algorithm Specific Options
 
-    grid.templateRows.add(Track (Fr (1)));
     auto algo = params_->get_algo_index();
     DBGLOG("algo = ", algo)
     juce::Component *optionComponent = nullptr;
@@ -93,12 +94,16 @@ void AlgorithmComponent::resized() {
         case Algorithm::Linear :
             optionComponent = &linearComponent_;
             break;
+        case Algorithm::Spiral :
+            optionComponent = &spiralComponent_;
+            break;
         default :
             jassertfalse;
     }
 
     jassert(optionComponent != nullptr);
 
+    grid.templateRows.add(Track (Fr (1)));
     grid.items.add(GridItem(*optionComponent).withMargin({0, 5, 0, 5}));
 
     DBGLOG("AlgorithmComponent Algorithm Options DONE");

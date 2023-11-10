@@ -16,6 +16,7 @@
 #include "AlgoChoiceComponent.hpp"
 #include "RandomAlgoOptionsComponent.hpp"
 #include "LinearAlgoOptionsComponent.hpp"
+#include "SpiralAlgoOptionsComponent.hpp"
 
 #include "../ProcessorParameters.hpp"
 #include "../Starp.hpp"
@@ -41,6 +42,7 @@ private:
     AlgoChoiceComponent algoComponent_;
     RandomAlgoOptionsComponent randomComponent_;
     LinearAlgoOptionsComponent linearComponent_;
+    SpiralAlgoOptionsComponent spiralComponent_;
 
 //==========================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AlgorithmComponent)

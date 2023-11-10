@@ -22,6 +22,10 @@ struct RandomParameters {
     // Even with the L suffix it uses a 32 bit int. So
     // need to cast to int64 intentionally.
     juce::Value seed_value{juce::var{juce::int64{0L}}};
+    juce::int64 get_seed() const {return juce::int64(seed_value.getValue()); }
+
+    juce::Value replace{juce::var{false}};
+    bool get_replace() const { return bool(replace.getValue()); }
 
     void pick_new_key() {
         juce::Random rng{};
@@ -40,4 +44,15 @@ struct LinearParameters {
 
     juce::Value restart{juce::var{false}};
     bool get_restart() const { return bool(restart.getValue()); }
+};
+
+struct SpiralParameters {
+    enum StartPosition { Bottom, Top };
+    enum Direction { In, Out, InOut, OutIn };
+
+    juce::Value start_position{Top};
+    int get_start_position() const { return int(start_position.getValue()); }
+
+    juce::Value direction{In};
+    int get_direction() const { return int(direction.getValue()); }
 };

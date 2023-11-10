@@ -20,23 +20,17 @@ extern juce::Array<juce::var> AlgorithmIndexes;
 extern juce::StringArray AlgorithmChoices;
 
 //========================================================================
-
-// If anything is added to this, be sure to add to the two arrays below
-// and to the speed_parameter_values in StarpProcessor/proccing.cpp
-enum Speed {
-    Sixteenth,
-    EighthTriplet,
-    SixteenthDotted,
-    Eighth,
-    QuarterTriplet,
-    EighthDotted,
-    Quarter,
-    HalfTriplet,
-    QuarterDotted,
-    Half
+struct speed_value {
+    juce::String name;
+    double multiplier;
 };
 
-constexpr int default_speed = Speed::Eighth;
+extern juce::Array<speed_value> speed_parameter_values;
 
-extern juce::Array<juce::var> SpeedIndexes;
-extern juce::StringArray SpeedChoices;
+//========================================================================
+
+enum SpeedType {
+    Note, Bar, MSec
+};
+
+extern juce::StringArray SpeedTypes;

@@ -13,6 +13,7 @@
 #pragma once
 
 #include "../AlgorithmParameters.hpp"
+#include "../ValueListener.hpp"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -20,31 +21,35 @@
 
 using  SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 
-class RandomAlgoOptionsComponent : public juce::Component, juce::Value::Listener {
+class RandomAlgoOptionsComponent : public juce::Component {
 public :
     RandomAlgoOptionsComponent(RandomParameters * parms);
 
-    void valueChanged(juce::Value &v);
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    void addListener(juce::Value::Listener *l) { value_.addListener(l); }
-
+    ~RandomAlgoOptionsComponent();
 
 private :
 
     RandomParameters *params_;
     juce::Value value_;
+    juce::Value replace_;
 
     juce::Value seed_text_;
 
     juce::TextButton changeKeyButton_;
+    juce::ToggleButton replaceButton_;
 
     juce::Label keyLabel_;
     juce::Label keyValueLabel_{"RandomKeyLabel", "00000000"};
 
+    ValueListener seed_listener_;
+    ValueListener replace_listener_;
+
     void changeKey();
     void update_seed_display();
+    void update_replace();
 
 
 

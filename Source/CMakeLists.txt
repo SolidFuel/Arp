@@ -45,15 +45,26 @@ juce_add_plugin("${BaseTargetName}"
 target_sources(${BaseTargetName} PRIVATE
         HashRandom.hpp HashRandom.cpp
         position_data.hpp ValueListener.hpp
+        Algorithms/AlgoBase.hpp
+        Algorithms/RandomAlgorithm.hpp
+        Algorithms/LinearAlgorithm.hpp
+        Algorithms/SpiralAlgorithm.hpp
         AlgorithmEnum.hpp AlgorithmParameters.hpp Algorithm.hpp
         ParamData.hpp ParamData.cpp
         StarpEditor.hpp StarpEditor.cpp
+        EditorComponent/OverlayComponent.hpp
+        EditorComponent/BoxComponent.hpp
+        EditorComponent/BoxComponent.cpp
+        EditorComponent/ButtonGroupComponent.hpp
+        EditorComponent/ButtonGroupComponent.cpp
         EditorComponent/AlgoChoiceComponent.hpp
         EditorComponent/AlgoChoiceComponent.cpp
         EditorComponent/RandomAlgoOptionsComponent.hpp
         EditorComponent/RandomAlgoOptionsComponent.cpp
         EditorComponent/LinearAlgoOptionsComponent.hpp
         EditorComponent/LinearAlgoOptionsComponent.cpp
+        EditorComponent/SpiralAlgoOptionsComponent.hpp
+        EditorComponent/SpiralAlgoOptionsComponent.cpp
         EditorComponent/AlgorithmComponent.hpp
         EditorComponent/AlgorithmComponent.cpp
         EditorComponent/PropertyComponent.hpp

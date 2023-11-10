@@ -17,40 +17,41 @@
 juce::Array<juce::var> AlgorithmIndexes {{
     juce::var{Algorithm::Random},
     juce::var{Algorithm::Linear},
+    juce::var{Algorithm::Spiral},
 
 }};
 
 juce::StringArray AlgorithmChoices{{
     "Random",
-    "Linear"
+    "Linear",
+    "Spiral",
 }};
 
-//========================================================================
+ 
+//=======================================================================
+juce::Array<speed_value> speed_parameter_values = {
+    speed_value{"1/32"  , 0.125},
+    speed_value{"1/16t" , 0.5/3.0 },
+    speed_value{"1/32d" , 0.1875 },
+    speed_value{"1/16q" , 0.20 },
+    speed_value{"1/16"  , 0.25 },
+    speed_value{"1/8t"  , 1.0/3.0 },
+    speed_value{"1/16d" , 0.375},
+    speed_value{"1/8q"  , 0.40},
+    speed_value{"1/8"   , 0.50},
+    speed_value{"1/4t"  , 2.0/3.0 },
+    speed_value{"1/8d"  , 0.75},
+    speed_value{"1/4q"  , 0.8 },
+    speed_value{"1/4"   , 1.0 },
+    speed_value{"1/2t"  , 4.0/3.0 },
+    speed_value{"1/4d"  , 1.5 },
+    speed_value{"1/2q"  , 1.6 },
+    speed_value{"1/2"   , 2.0 },
+    speed_value{"1/1t"  , 8.0/3.0 },
+    speed_value{"1/2d"  , 3.0 },
+    speed_value{"1/1q"  , 3.2 },
+    speed_value{"1/1"   , 4.0 },
+};
 
-juce::Array<juce::var> SpeedIndexes {{
-    juce::var{Speed::Sixteenth},
-    juce::var{Speed::EighthTriplet},
-    juce::var{Speed::SixteenthDotted},
-    juce::var{Speed::Eighth},
-    juce::var{Speed::QuarterTriplet},
-    juce::var{Speed::EighthDotted},
-    juce::var{Speed::Quarter},
-    juce::var{Speed::HalfTriplet},
-    juce::var{Speed::QuarterDotted},
-    juce::var{Speed::Half},
 
-}};
-
-juce::StringArray SpeedChoices{{
-    "1/16",
-    "1/8t",
-    "1/16d",
-    "1/8",
-    "1/4t",
-    "1/8d",
-    "1/4",
-    "1/2t",
-    "1/4d",
-    "1/2"
-}};
-
+juce::StringArray SpeedTypes{{ "note", "bar", "msec" }};

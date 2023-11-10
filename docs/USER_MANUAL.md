@@ -1,5 +1,6 @@
 # STARP _V0.2.0_ User Manual
 
+Starp - Stable Arpeggiator VST
 
 ## Header
 
@@ -10,7 +11,7 @@ version, copyright, and other information about the software.
 
 ## Algorithm
 
-The algorithm section consts of two rows. The top row allows you to pick the
+The algorithm section consists of two rows. The top row allows you to pick the
 algorithm. The bottom row contains options specific to the algorithm.
 
 **NOTE**: None of the settings in this section are automatable in the host and
@@ -61,12 +62,12 @@ time the midi data changes.
 #### Up / Down
 
 These button set the primary direction for the arpeggiation. When `Up` is
-selected, the arp will start at the lowest not and work up. If `Down` is
+selected, the arp will start at the lowest note and work up. If `Down` is
 selected, the arp will start at the highest note and work down.
 
 #### Zigzag
 
-When selected, the arp will go both up **and** down. The direction done first is
+When selected, the arp will go both up **and** down. The starting direction is
 set by the Up/Down radio buttons.
 
 The zigzag does not repeat the note in the middle. So, if `Up` and `Zigzag` are
@@ -75,7 +76,7 @@ chosen, the highest note will not be repeated in the middle of the sections.
 #### Restart
 
 By default, the sequence runs continuously in the background. If there are no
-notes being played, the the plugin creates no midi data, but the sequence is
+notes being played, then the plugin creates no midi data, but the sequence is
 still running.
 
 When `Restart` is selected, the sequence will restart every time the midi notes
@@ -87,7 +88,7 @@ change.
 
 #### Primary Note Selection
 
-These radio buttons set whether the top or bottom note is first (for `In` ) or
+These radio buttons set whether the top or bottom note is the first (for `In`) or
 last (for `Out`) note in the sequence. For the `InOut` and `OutIn` sequences,
 these set both the starting and the ending note.
 
@@ -123,8 +124,8 @@ by
 - Clicking on the box that shows the value and typing in a new value.
 - Scrolling the mouse wheel while the mouse pointer is on the slider track.
 
-For those sliders that have continuously variable values. A "Fine Adjustment"
-mode is available by holding do `Cmd/Ctrl` while dragging the slider knob.
+For those sliders that have continuously variable values, a "Fine Adjustment"
+mode is available by holding down `Cmd/Ctrl` while dragging the slider knob.
 
 ### Probability
 
@@ -137,7 +138,7 @@ Note that sequences are advanced even if a note is not played.
 
 There are three ways to specify the speed of the arpeggiation.
 
-- Note Value
+- Note value
 - Bar division
 - Millisecond
 
@@ -160,7 +161,7 @@ _Starp_ uses data from both the BPM of the track and the time signature to
 compute the actual length.
 
 For the whole note values ('1/1', '1/1t', '1/1q') the length of the note is
-euqivalent to 4 quarters notes _not_ a bar. So, if the time signature is 3/4,
+equivalent to 4 quarters notes _not_ a bar. So, if the time signature is 3/4,
 then `1/1` will last for longer than a measure.
 
 #### Bar Divisions
@@ -254,7 +255,7 @@ to the host and which control on the UI it corresponds to.
 |Advance| THe Advance slider in the Timing section|
 |Delay| The `Delay` slider in the Timing section|
 |Gate %| The `Gate %` slider|
-|Gate Range| THe `Range` Slider in the Gate section|
+|Gate Range| The `Range` Slider in the Gate section|
 |Probability| The `Probability` slider|
 |Speed in msec| The Slider in the Speed section when `msec` is selected|
 |Speed in Notes| The Slider in the Speed section when `note` is selected|

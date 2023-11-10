@@ -14,34 +14,36 @@ jobs:
   build:
     strategy :
       matrix :
-        os : [ windows-latest, ubuntu-latest]
+        os : [ windows-latest, ubuntu-latest, macos-latest]
         include :
           - os : windows-latest
             artifact_path : "Starp.vst3/Contents/x86_64-win"
             file : Starp.vst3
             artifact_name : Starp-win64
-          # macos is seg faulting when running juce_vst3_helper
-          #- os : macos-latest
-          #  artifact_path : "Starp.vst3/Contents/MacOS"
-          #  file : Starp
-          #  artifact_name : Starp-macos
           - os : ubuntu-latest
             artifact_path : "."
             file : Starp.vst3
             artifact_name : Starp-linux
+          - os : macos-latest
+            artifact_path : "Starp.vst3/Contents/MacOS"
+            file : Starp
+            artifact_name : Starp-macos
     
     runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v3
+    
+    - name: install Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
 
     - name: Configure ubuntu
       if : matrix.os == 'ubuntu-latest'
       run : sudo apt install xorg-dev libasound2-dev libgl1-mesa-dev
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -GNinja
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -v

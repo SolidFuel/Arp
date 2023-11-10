@@ -64,7 +64,7 @@ void BoxComponent::resized() {
 
     int index = 0;
     for(auto *c : getChildren()) {
-        auto margin = juce::GridItem::Margin::Margin();
+        auto margin = juce::GridItem::Margin();
         if (index < insets.size()) {
             auto inset = insets[index];
             margin.left = margin.right = float(inset.first);

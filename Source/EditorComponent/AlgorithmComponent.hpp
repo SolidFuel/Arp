@@ -31,7 +31,7 @@ public:
 
     AlgorithmComponent(ProcessorParameters *params);
 
-    void valueChanged(juce::Value &v);
+    void valueChanged(juce::Value &v) override;
     void paint(juce::Graphics&) override;
     void resized() override;
 

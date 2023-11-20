@@ -28,7 +28,7 @@ public :
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    ~RandomAlgoOptionsComponent();
+    virtual ~RandomAlgoOptionsComponent() override;
 
 private :
 

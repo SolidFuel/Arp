@@ -55,7 +55,7 @@ public:
     static juce::AudioProcessor::BusesProperties getDefaultProperties();
 
     juce::AudioProcessorEditor* createEditor() override;
-    bool hasEditor() const override { return true; };
+    bool hasEditor() const override { return true; }
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;

@@ -62,12 +62,12 @@ public :
 
     }
 
-    ~SpiralAlgorithm() {
+    virtual ~SpiralAlgorithm() override {
         p_->direction.removeListener(&direction_listener_);
         p_->start_position.removeListener(&start_position_listener_);
     }
 
-    Algorithm get_algo() const { return Algorithm::Spiral; }
+    Algorithm get_algo() const override { return Algorithm::Spiral; }
 
     void reset() override {
         index_map_.clearQuick();

@@ -27,7 +27,7 @@ public :
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    ~SpiralAlgoOptionsComponent();
+    virtual ~SpiralAlgoOptionsComponent() override;
 
 
 private :

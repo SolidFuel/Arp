@@ -26,7 +26,7 @@ public :
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    ~LinearAlgoOptionsComponent();
+    virtual ~LinearAlgoOptionsComponent() override;
 
 
 private :

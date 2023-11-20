@@ -19,10 +19,10 @@ class ButtonGroupComponent : public juce::GroupComponent {
 public :
     enum Orientation { Horizontal, Vertical };
 
-    ButtonGroupComponent() {};
+    ButtonGroupComponent() {}
 
     ButtonGroupComponent(int groupId, Orientation o = Horizontal, bool border = false) : 
-        orient_(o), group_id_(groupId), draw_border_(border) {};
+        orient_(o), group_id_(groupId), draw_border_(border) {}
 
     void add(juce::TextButton *btn) {
         juce::GroupComponent::addAndMakeVisible(btn);

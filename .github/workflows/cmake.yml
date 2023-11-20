@@ -46,7 +46,7 @@ jobs:
       if : matrix.os == 'macos-latest'
       uses : maxim-lobanov/setup-xcode@v1.6.0
       with :
-        xcode-version : "^5.0.1"
+        xcode-version : "^15.0.1"
 
 
     - name: Configure CMake

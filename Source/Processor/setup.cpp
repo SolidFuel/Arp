@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -10,12 +10,12 @@
  * in the root directory.
  ****/
 
-#include "../StarpProcessor.hpp"
-#include "../StarpEditor.hpp"
+#include "../PluginProcessor.hpp"
+#include "../PluginEditor.hpp"
 #include "../Starp.hpp"
 
 
-juce::PluginHostType StarpProcessor::host_type;
+juce::PluginHostType PluginProcessor::host_type;
 
 #if STARP_DEBUG
     std::unique_ptr<juce::FileLogger> dbgout = 
@@ -23,7 +23,7 @@ juce::PluginHostType StarpProcessor::host_type;
 #endif
 
 
-StarpProcessor::StarpProcessor() : /* juce::AudioProcessor(getDefaultProperties()), */
+PluginProcessor::PluginProcessor() : /* juce::AudioProcessor(getDefaultProperties()), */
         parameters_(*this) {
 
 
@@ -35,16 +35,16 @@ StarpProcessor::StarpProcessor() : /* juce::AudioProcessor(getDefaultProperties(
 
 }
 
-StarpProcessor::~StarpProcessor() {
+PluginProcessor::~PluginProcessor() {
 
-    DBGLOG("StarpProcessor destructor called")
+    DBGLOG("PluginProcessor destructor called")
 }
 
-bool StarpProcessor::isMidiEffect() const {
+bool PluginProcessor::isMidiEffect() const {
     return host_type.isReaper();
 };
 
-juce::AudioProcessor::BusesProperties StarpProcessor::getDefaultProperties() {
+juce::AudioProcessor::BusesProperties PluginProcessor::getDefaultProperties() {
     auto retval = BusesProperties();
 
     if (! host_type.isReaper()) {
@@ -56,10 +56,10 @@ juce::AudioProcessor::BusesProperties StarpProcessor::getDefaultProperties() {
 }
 
 
-juce::AudioProcessorEditor* StarpProcessor::createEditor() {
+juce::AudioProcessorEditor* PluginProcessor::createEditor() {
 
     DBGLOG("------- Setting Up Editor -----------");
-    return new StarpEditor (*this);
+    return new PluginEditor (*this);
 }
 
 
@@ -70,7 +70,7 @@ juce::AudioProcessorEditor* StarpProcessor::createEditor() {
 constexpr int CURRENT_STATE_VERSION = 2;
 const juce::String XML_TOP_TAG = "Starp-Preset";
 
-void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
+void PluginProcessor::getStateInformation (juce::MemoryBlock& destData) {
 
     DBGLOG("GET STATE called");
 
@@ -117,9 +117,9 @@ void StarpProcessor::getStateInformation (juce::MemoryBlock& destData) {
 }
 
 //============================================================================
-void StarpProcessor::parseCurrentXml(const juce::XmlElement * elem) {
+void PluginProcessor::parseCurrentXml(const juce::XmlElement * elem) {
 
-    DBGLOG("StarpProcessor::parseCurrentXml called")
+    DBGLOG("PluginProcessor::parseCurrentXml called")
 
     auto *child = elem->getChildByName(parameters_.apvts->state.getType());
     if (child) {
@@ -171,9 +171,9 @@ void StarpProcessor::parseCurrentXml(const juce::XmlElement * elem) {
 }
 
 //============================================================================
-void StarpProcessor::parseOriginalXml(const juce::XmlElement * xml) {
+void PluginProcessor::parseOriginalXml(const juce::XmlElement * xml) {
 
-        DBGLOG("StarpProcessor::parseOriginalXml called")
+        DBGLOG("PluginProcessor::parseOriginalXml called")
 
         if (xml->hasTagName(parameters_.apvts->state.getType())) {
             parameters_.apvts->replaceState(juce::ValueTree::fromXml(*xml));
@@ -209,7 +209,7 @@ void StarpProcessor::parseOriginalXml(const juce::XmlElement * xml) {
 //============================================================================
 // Read Serialize Parameters from the host and set our state.
 //
-void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
+void PluginProcessor::setStateInformation (const void* data, int sizeInBytes) {
     DBGLOG("SET STATE called");
 
     auto xml = getXmlFromBinary(data, sizeInBytes);
@@ -238,5 +238,5 @@ void StarpProcessor::setStateInformation (const void* data, int sizeInBytes) {
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new StarpProcessor();
+    return new PluginProcessor();
 }

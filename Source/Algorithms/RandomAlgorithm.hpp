@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -15,9 +15,10 @@
 #include "AlgoBase.hpp"
 #include "../AlgorithmParameters.hpp"
 
-#include "../ValueListener.hpp"
 #include "../HashRandom.hpp"
 #include "../Starp.hpp"
+
+#include <solidfuel/solidfuel.hpp>
 
 
 
@@ -98,8 +99,8 @@ public:
 
 private :
 
-    ValueListener seed_listener_;
-    ValueListener replace_listener_;
+    solidfuel::ValueListener seed_listener_;
+    solidfuel::ValueListener replace_listener_;
 
     void update_parameters() {
         DBGLOG("RandomAlgorithm::update_parameters called")

@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -12,6 +12,9 @@
 
 #include <string>
 
+const std::string PLUGIN_NAME = "@PLUGIN_PRODUCT_NAME@";
+const std::string PLUGIN_NAME_UPPER = "@PLUGIN_NAME_UPPER@";
+
 const std::string GIT_HASH = "@GIT_SHORT_HASH@";
 
-const std::string STARP_VERSION = "@CMAKE_PROJECT_VERSION@";
+const std::string PLUGIN_VERSION = "@CMAKE_PROJECT_VERSION@";

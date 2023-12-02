@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -10,8 +10,8 @@
  * in the root directory.
  ****/
 
-#include "StarpProcessor.hpp"
-#include "StarpEditor.hpp"
+#include "PluginProcessor.hpp"
+#include "PluginEditor.hpp"
 
 #include "Starp.hpp"
 
@@ -24,7 +24,7 @@ constexpr int HEIGHT = HEADER_HEIGHT + ALGORITHM_HEIGHT + PROPERTY_HEIGHT;
 constexpr int MARGIN = 5;
 
 //==============================================================================
-StarpEditor::StarpEditor (StarpProcessor& p) :
+PluginEditor::PluginEditor (PluginProcessor& p) :
     AudioProcessorEditor (&p), proc_ (p),
     algorithm_component_(p.getParameters()),
     property_component_(p.getParameters())
@@ -37,18 +37,18 @@ StarpEditor::StarpEditor (StarpProcessor& p) :
     setSize(WIDTH, HEIGHT);
 }
 
-StarpEditor::~StarpEditor() {
+PluginEditor::~PluginEditor() {
     
 }
 
 //==============================================================================
-void StarpEditor::paint (juce::Graphics& g) {
+void PluginEditor::paint (juce::Graphics& g) {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
 }
 
-void StarpEditor::resized() {
+void PluginEditor::resized() {
 
     using FlexItem = juce::FlexItem;
     juce::FlexBox box;

@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -14,9 +14,9 @@
 
 #include <version.hpp>
 
-const std::string about_text = "      STARP    \n"
-    "Version " + STARP_VERSION + " (" + GIT_HASH + ")\n"
-    "Copyright (c) 2023 Mark Hollomon\n"
+const std::string about_text = "      " + PLUGIN_NAME_UPPER + "    \n"
+    "Version " + PLUGIN_VERSION + " (" + GIT_HASH + ")\n"
+    "Copyright (c) 2023 SOlid Fuel\n"
     "Licensed under GPL 3 (https://opensource.org/license/gpl-3-0/)\n"
     "Source code : https://github.com/mhhollomon/Starp\n"
     "\n"
@@ -40,7 +40,7 @@ const std::string about_text = "      STARP    \n"
     ;
 
 HeaderComponent::HeaderComponent() {
-    nameLabel_.setText ("STARP", juce::dontSendNotification);
+    nameLabel_.setText (JucePlugin_Name, juce::dontSendNotification);
     nameLabel_.setFont(juce::Font(32.0f, juce::Font::bold));
     nameLabel_.setJustificationType(juce::Justification::centred);
     addAndMakeVisible (nameLabel_);
@@ -83,7 +83,7 @@ void HeaderComponent::showAboutBox_() {
 
     te->setSize(600, 400);
 
-    options.dialogTitle = "ABOUT STARP";
+    options.dialogTitle = "ABOUT " + PLUGIN_NAME_UPPER;
     options.content = juce::OptionalScopedPointer<juce::Component>(te, true);
 
     options.launchAsync();

@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -10,8 +10,8 @@
  * in the root directory.
  ****/
 
-#include "../StarpProcessor.hpp"
-#include "../StarpEditor.hpp"
+#include "../PluginProcessor.hpp"
+#include "../PluginEditor.hpp"
 #include "../Starp.hpp"
 
 #include <iomanip>
@@ -38,7 +38,7 @@ bool operator<(const schedule& lhs, const schedule& rhs) { return lhs.start < rh
 
 //============================================================================
 //============================================================================
-void StarpProcessor::prepareToPlay (double sampleRate, int) {
+void PluginProcessor::prepareToPlay (double sampleRate, int) {
 
     DBGLOG("PREPARE called");
     sample_rate_ = sampleRate;
@@ -52,7 +52,7 @@ void StarpProcessor::prepareToPlay (double sampleRate, int) {
 
 }
 
-void StarpProcessor::releaseResources()
+void PluginProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
@@ -65,9 +65,9 @@ void StarpProcessor::releaseResources()
 }
 
 //============================================================================
-void StarpProcessor::update_algorithm(int new_algo) {
+void PluginProcessor::update_algorithm(int new_algo) {
 
-    DBGLOG("StarpProcessor::update_algorithm called # ", new_algo)
+    DBGLOG("PluginProcessor::update_algorithm called # ", new_algo)
 
     if (!algo_obj_ || algo_obj_->get_algo() != new_algo) {
         DBGLOG("Changing to new algorithm # ", new_algo);
@@ -103,7 +103,7 @@ void StarpProcessor::update_algorithm(int new_algo) {
 }
 
 //============================================================================
-const position_data StarpProcessor::compute_block_position() {
+const position_data PluginProcessor::compute_block_position() {
 
     position_data pd{};
 
@@ -151,7 +151,7 @@ const position_data StarpProcessor::compute_block_position() {
 }
 
 //============================================================================
-std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(double for_slot, double start_pos) {
+std::optional<juce::MidiMessage> PluginProcessor::maybe_play_note(double for_slot, double start_pos) {
 
     DBGLOG("maybe_play_note called ", for_slot, " / ", start_pos)
     if (incoming_notes_.size() == 0) {
@@ -204,7 +204,7 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(double for_slot
     return retval;
 }
 
-void StarpProcessor::schedule_note(double current_pos, double slot_number, bool can_advance) {
+void PluginProcessor::schedule_note(double current_pos, double slot_number, bool can_advance) {
     HashRandom rng{"Humanize", parameters_.get_random_seed(), slot_number};
 
     auto advance = parameters_.timing_advance->get() * can_advance;
@@ -229,7 +229,7 @@ void StarpProcessor::schedule_note(double current_pos, double slot_number, bool 
 }
 
 //============================================================================
-void StarpProcessor::reset_data(bool clear_incoming) {
+void PluginProcessor::reset_data(bool clear_incoming) {
     DBGLOG("   reset_data called");
 
     last_scheduled_slot_number_ = -1.0;
@@ -245,7 +245,7 @@ void StarpProcessor::reset_data(bool clear_incoming) {
 }
 
 //============================================================================
-void StarpProcessor::processBlock (juce::AudioBuffer<double>& buffer,
+void PluginProcessor::processBlock (juce::AudioBuffer<double>& buffer,
                                     juce::MidiBuffer& midiBuffer) {
 
 
@@ -261,7 +261,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<double>& buffer,
 }
 
 //============================================================================
-void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
+void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                     juce::MidiBuffer& midiBuffer) {
 
 
@@ -277,7 +277,7 @@ void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 }
 
 //============================================================================
-void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer ) {
+void PluginProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer ) {
 
     if (algo_changed_) {
         algo_changed_ = false;
@@ -479,7 +479,7 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
 //============================================================================
 // returns the "speed" of notes based on the value of a quarter note = 1
-double StarpProcessor:: getSpeedFactor(double bpm, const juce::AudioPlayHead::TimeSignature &time_sig) {
+double PluginProcessor:: getSpeedFactor(double bpm, const juce::AudioPlayHead::TimeSignature &time_sig) {
     auto speed_type = parameters_.speed_type->getIndex();
     double speed_factor = 1;
 
@@ -512,7 +512,7 @@ double StarpProcessor:: getSpeedFactor(double bpm, const juce::AudioPlayHead::Ti
     return speed_factor;
 }
 
-double StarpProcessor::getGate(double slot) {
+double PluginProcessor::getGate(double slot) {
 
     DBGLOG("--- getGate called = ", slot)
     HashRandom rng{"Gate", parameters_.get_random_seed(), slot};

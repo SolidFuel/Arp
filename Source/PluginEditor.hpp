@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -12,18 +12,18 @@
 
 #pragma once
 
-#include "StarpProcessor.hpp"
+#include "PluginProcessor.hpp"
 #include "ParamData.hpp"
 #include "EditorComponent/HeaderComponent.hpp"
 #include "EditorComponent/AlgorithmComponent.hpp"
 #include "EditorComponent/PropertyComponent.hpp"
 
 //==============================================================================
-class StarpEditor  : public juce::AudioProcessorEditor
+class PluginEditor  : public juce::AudioProcessorEditor
 {
 public:
-    explicit StarpEditor (StarpProcessor&);
-    ~StarpEditor() override;
+    explicit PluginEditor (PluginProcessor&);
+    ~PluginEditor() override;
 
     //==============================================================================
     void paint (juce::Graphics&) override;
@@ -32,7 +32,7 @@ public:
 
 private:
 
-    StarpProcessor& proc_;
+    PluginProcessor& proc_;
 
     HeaderComponent header_component_;
     AlgorithmComponent algorithm_component_;
@@ -41,5 +41,5 @@ private:
 
 //==========================================================
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

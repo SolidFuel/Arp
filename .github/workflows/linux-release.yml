@@ -83,7 +83,7 @@ jobs:
     - name: Build .deb
       id: build_deb
       working-directory: ${{github.workspace}}/build
-      run : bash -x ../packaging/create-deb
+      run : ../common/scripts/create-deb.sh
   
     - name: Upload deb
       uses: actions/upload-artifact@v3

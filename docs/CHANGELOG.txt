@@ -1,0 +1,32 @@
+VERSION 0.3.0 2023-12-10
+
+NEW NAME : solidArp
+
+[New Features]
+* Support for MacOS (Universal)
+* Installers for all supported platform
+    + '.pkg' for MacOS
+    + '.deb' for Linux
+    + '.exe' for Windows
+
+VERSION 0.2.0 2023-11-10
+
+[Documentation]
+* NEW User Manual
+* Added Instructions for FL Studio and Cubase
+
+[New Features]
+* New Spiral Algorithms
+
+[Enhancements]
+* There are now 3 ways to specify the speed
+    + Note values (range has been extended)
+    + Milliseconds
+    + Fractions of a Measure
+* Quintuplet timing has been added
+* Random Algorithm as gained a "Replace" option (see User Manual)
+
+[Bug Fixes]
+* Clean up looping in Cubase
+* Silence some Linux compile warnings.
+

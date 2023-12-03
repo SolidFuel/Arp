@@ -1,6 +1,12 @@
-# STARP _V0.2.0_ User Manual
+# solidArp _V0.3.0_ User Manual
 
-Starp - Stable Arpeggiator VST
+**solidArp** is a powerful arppegiator that is a
+little different from others.
+
+In Random mode _solidArp_ will make sure that the
+sequence generate - while indeed random - is stable.
+If the midi data doesn't change during successive 
+playbacks, the sequences generated will not change.
 
 ## Header
 
@@ -21,7 +27,7 @@ will not show up in the parameters list.
 
 This algorithm is the reason the plug-in exists. Most random arpeggiators will
 give you a different sequence of notes each tme you play through the track.
-_Starp_ will give you the exact same (random) sequence each time you play -
+_solidArp_ will give you the exact same (random) sequence each time you play -
 assuming there is no changes to e.g. the MIDI data or BPM, etc.
 
 The algorithm does its best to make sure that the same note is not played twice
@@ -157,7 +163,7 @@ suffixes are used to modify the base value:
 
 Faster timings are on the left and slower on the right.
 
-_Starp_ uses data from both the BPM of the track and the time signature to
+_solidArp_ uses data from both the BPM of the track and the time signature to
 compute the actual length.
 
 For the whole note values ('1/1', '1/1t', '1/1q') the length of the note is
@@ -174,7 +180,7 @@ Faster timings are on the left and slower on the right.
 
 Fine Adjustment mode is available but rather pointless.
 
-_Starp_ uses data from both the BPM of the track and the time signature to
+_solidArp_ uses data from both the BPM of the track and the time signature to
 compute the actual length.
 
 As an example, if you are in 3/4 time signature and select `4`, there will be 4
@@ -247,7 +253,7 @@ Fine Adjustment mode is available for both.
 
 ### Host Automatable parameters
 
-This table gives the names of the paramters that _Starp_ makes available
+This table gives the names of the paramters that _solidArp_ makes available
 to the host and which control on the UI it corresponds to.
 
 |Parameter Name|UI Control|

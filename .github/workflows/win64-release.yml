@@ -1,0 +1,80 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [ "main", "win-build" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  BUILD_TYPE: Release
+  OS_TAG : win64
+  # Just to make vscode happy. These will be set for real
+  # in the config-info step
+  SF_PROJECT : ""
+  SF_VERSION : ""
+  SF_PROJ_LOWER : ""
+  SF_ARTIFACT_PATH : ""
+  SF_BUILD_FILE : ""
+  SF_VST3_BUILD_PATH : ""
+  SF_OUTPUT_STEM : ""
+
+jobs:
+    build:
+        runs-on: 'windows-latest'
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@v3
+
+            - name: Get Config Info
+              id: config-info
+              working-directory: ${{github.workspace}}
+              shell : bash
+              run : |
+                ./scripts/project_vars.sh > CONFIG.sh
+                cat CONFIG.sh
+                cat CONFIG.sh >> $GITHUB_ENV
+                cat CONFIG.sh >> $GITHUB_OUTPUT
+
+            - name: Configure CMake
+              run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+            - name: Build
+              run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        
+            - name: Pluginval Windows
+              working-directory: ${{github.workspace}}/build
+              run: |
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip -OutFile pluginval.zip
+                Expand-Archive pluginval.zip -DestinationPath .
+                .\pluginval.exe --validate-in-process --strictness-level 10 --output-dir "." ${env:SF_VST3_BUILD_PATH}/${env:SF_ARTIFACT_PATH}/${env:SF_BUILD_FILE} | Out-Host
+                if ($LASTEXITCODE -ne 0 ) { Write-Error "FAILED!!!"; exit 1; }
+                
+            - name: Compress plugin win
+              working-directory: ${{github.workspace}}/build
+              run : |
+                  Set-Location ${env:SF_VST3_BUILD_PATH}/${env:SF_ARTIFACT_PATH}
+                  $ZIPNAME="${env:SF_OUTPUT_STEM}-vst3.zip"
+                  Compress-Archive -Path ${env:SF_BUILD_FILE} -CompressionLevel Optimal -Destination ${{github.workspace}}/build/${ZIPNAME}     
+          
+            - name: Upload plugin
+              uses: actions/upload-artifact@v3
+              with:
+                  name: ${{env.SF_OUTPUT_STEM}}-vst3.zip
+                  path: ${{github.workspace}}/build/${{env.SF_OUTPUT_STEM}}-vst3.zip
+
+            - name : setup windows installer file
+              working-directory: ${{github.workspace}}
+              shell : bash
+              run : ./common/scripts/expand_file.sh ./packaging/windows/plugin.iss > ./build/plugin.iss
+                
+            - name : build windows installer
+              working-directory: ${{github.workspace}}
+              run: iscc /Dsrcdir="$pwd" .\build\plugin.iss
+            
+            - name: Upload windows installer
+              uses: actions/upload-artifact@v3
+              with:
+                name: ${{env.SF_OUTPUT_STEM}}-install.exe
+                path: ${{github.workspace}}/build/${{env.SF_PROJ_LOWER}}.exe
+            

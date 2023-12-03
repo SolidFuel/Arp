@@ -25,6 +25,8 @@ jobs:
         steps:
             - name: Checkout Repo
               uses: actions/checkout@v3
+              with:
+                submodules: true
 
             - name: Get Config Info
               id: config-info

@@ -1,4 +1,4 @@
-# Starp
+# solidArp
 
 Stable Arpeggiator VST
 
@@ -20,15 +20,7 @@ Two other sets of algorithms are available:
 
 ## Building
 
-Build should work for Windows and Linux. There is tooling for MacOS, but I don't
-think it works.
-
-```sh
-git clone https://github.com/mhhollomon/Starp.git
-cd Starp
-cmake -S. -Bbuild
-cmake --build build
-```
+See [BUILDING doc](docs/BUILDING.md)
 
 ## Install From Release
 
@@ -121,8 +113,9 @@ _Note_ Record Arm must be on or the MIDI will not reach the synth.
 
 ## License/Copyright
 
-Starp - Stable Random Arpeggiator Plugin Copyright (C) 2023 Mark Hollomon This
-program is free software: you can redistribute it and/or modify it under the
+solidArp - Stable Random Arpeggiator Plugin Copyright (C) 2023 Solid Fuel
+
+This program is free software: you can redistribute it and/or modify it under the
 terms of the **GNU General Public License** as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version. This program is distributed in the hope that it will be useful, but

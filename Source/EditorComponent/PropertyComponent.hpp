@@ -110,7 +110,6 @@ private:
     std::unique_ptr<SliderAttachment> speedMSecAttachment_;
 
     ValueListener speed_type_listener_;
-    juce::Slider *current_speed_slider_;
 
     juce::Label probabilityLabel_;
     juce::Slider probabilitySlider_;

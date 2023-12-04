@@ -15,8 +15,8 @@
 //========================================================================
 enum Algorithm {
     Random,
-    Up,   /* deprecated */
-    Down, /* deprecated */
+    AlgUp,   /* deprecated */
+    AlgDown, /* deprecated */
     Linear,
     Spiral,
 };

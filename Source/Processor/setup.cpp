@@ -14,10 +14,7 @@
 #include "../PluginEditor.hpp"
 #include "../Starp.hpp"
 
-
-juce::PluginHostType PluginProcessor::host_type;
-
-#if STARP_DEBUG
+#if SF_DEBUG
     std::unique_ptr<juce::FileLogger> dbgout = 
         std::unique_ptr<juce::FileLogger>(juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "--------V2--------"));
 #endif
@@ -42,15 +39,15 @@ PluginProcessor::~PluginProcessor() {
 
 bool PluginProcessor::isMidiEffect() const {
     return host_type.isReaper();
-};
+}
 
 juce::AudioProcessor::BusesProperties PluginProcessor::getDefaultProperties() {
     auto retval = BusesProperties();
 
-    if (! host_type.isReaper()) {
+     if (! host_type.isReaper()) {
         // Unless we are on reaper, act as if we are a synth.
         retval =  retval.withOutput("Output", juce::AudioChannelSet::stereo(), true);
-    }
+     }
     
     return retval;
 }
@@ -192,11 +189,11 @@ void PluginProcessor::parseOriginalXml(const juce::XmlElement * xml) {
             
             auto algo = xml->getIntAttribute("algorithm", Algorithm::Random);
             DBGLOG("   input algo = ", algo)
-            if (algo == Algorithm::Down ) {
+            if (algo == Algorithm::AlgDown ) {
                 algo = Algorithm::Linear;
                 parameters_.linear_parameters.direction = LinearParameters::Direction::Down;
                 parameters_.linear_parameters.zigzag = false;
-            } else if (algo == Algorithm::Up ) {
+            } else if (algo == Algorithm::AlgUp ) {
                 algo = Algorithm::Linear;
                 parameters_.linear_parameters.direction = LinearParameters::Direction::Up;
                 parameters_.linear_parameters.zigzag = false;

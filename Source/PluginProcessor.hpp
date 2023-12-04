@@ -53,10 +53,10 @@ public:
     PluginProcessor();
     ~PluginProcessor() override;
 
-    static juce::AudioProcessor::BusesProperties getDefaultProperties();
+    juce::AudioProcessor::BusesProperties getDefaultProperties();
 
     juce::AudioProcessorEditor* createEditor() override;
-    bool hasEditor() const override { return true; };
+    bool hasEditor() const override { return true; }
 
     //==========================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -103,8 +103,7 @@ private:
 
 
     // Used to set other things based on the Host
-    // defined in setup.hpp
-    static juce::PluginHostType host_type;
+    juce::PluginHostType host_type;
 
     // Sample rate
     double sample_rate_;

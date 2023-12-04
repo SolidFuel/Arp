@@ -72,19 +72,19 @@ void PluginProcessor::update_algorithm(int new_algo) {
     if (!algo_obj_ || algo_obj_->get_algo() != new_algo) {
         DBGLOG("Changing to new algorithm # ", new_algo);
 
-        // Up and Down will only show up if setStateInformation is
+        // AlgUp and Down will only show up if setStateInformation is
         // somehow flawed. But lets be cautions.
         switch (new_algo) {
             case Algorithm::Random :
                 algo_obj_ = std::make_unique<RandomAlgorithm>(&parameters_.random_parameters);
                 break;
-            case Algorithm::Up :
+            case Algorithm::AlgUp :
                 parameters_.linear_parameters.direction = LinearParameters::Direction::Up;
                 parameters_.linear_parameters.zigzag = false;
                 parameters_.algorithm_index = Algorithm::Linear;
                 algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters_.linear_parameters);
                 break;
-            case Algorithm::Down :
+            case Algorithm::AlgDown :
                 parameters_.linear_parameters.direction = LinearParameters::Direction::Down;
                 parameters_.linear_parameters.zigzag = false;
                 parameters_.algorithm_index = Algorithm::Linear;
@@ -344,9 +344,12 @@ void PluginProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer
     // === Read Midi Messages and update incoming_notes_ set
     juce::MidiBuffer newBuffer;
 
+    // These are used if debug is set
     int on_count = 0;
     int off_count = 0;
     int stop_count = 0;
+
+    juce::ignoreUnused(on_count, off_count, stop_count);
 
     for (const auto metadata : midiBuffer)
     {

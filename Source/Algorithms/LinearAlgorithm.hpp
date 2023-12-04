@@ -70,13 +70,13 @@ public :
         p_->restart.addListener(&restart_listener_);
     }
 
-    ~LinearAlgorithm() {
+    ~LinearAlgorithm() override {
         p_->direction.removeListener(&direction_listener_);
         p_->zigzag.removeListener(&zigzag_listener_);
         p_->restart.removeListener(&restart_listener_);
     }
 
-    Algorithm get_algo() const { return Algorithm::Linear; }
+    Algorithm get_algo() const override { return Algorithm::Linear; }
 
     int getNextNote(double slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
 

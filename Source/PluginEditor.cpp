@@ -25,7 +25,7 @@ constexpr int MARGIN = 5;
 
 //==============================================================================
 PluginEditor::PluginEditor (PluginProcessor& p) :
-    AudioProcessorEditor (&p), proc_ (p),
+    AudioProcessorEditor (&p), //proc_ (p),
     algorithm_component_(p.getParameters()),
     property_component_(p.getParameters())
 {

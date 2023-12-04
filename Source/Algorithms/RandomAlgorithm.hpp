@@ -58,7 +58,7 @@ public:
         available_notes.clearQuick();
     }
 
-    Algorithm get_algo() const { return Algorithm:: Random; }
+    Algorithm get_algo() const override { return Algorithm:: Random; }
 
 
     int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
@@ -90,12 +90,12 @@ public:
         return last_note;
     }
 
-    virtual ~RandomAlgorithm() override {
+    ~RandomAlgorithm() override {
         // We don't own the p_, so it might out live us.
         // explicitly remove the listener.
         p_->seed_value.removeListener(&seed_listener_);
         p_->replace.removeListener(&replace_listener_);
-    };
+    }
 
 private :
 

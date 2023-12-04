@@ -32,7 +32,7 @@ public:
 
 private:
 
-    PluginProcessor& proc_;
+    //PluginProcessor& proc_;
 
     HeaderComponent header_component_;
     AlgorithmComponent algorithm_component_;

@@ -1,0 +1,64 @@
+name: User Manual to PDF
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  BUILD_TYPE: Release
+  OS_TAG : linux
+  # Just to make vscode happy. These will be set for real
+  # in the config-info step
+  SF_PROJECT : ""
+  SF_VERSION : ""
+  SF_PROJ_LOWER : ""
+  SF_ARTIFACT_PATH : ""
+  SF_BUILD_FILE : ""
+  SF_VST3_BUILD_PATH : ""
+    
+
+jobs :
+  manual :
+    runs-on : ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+        with:
+          submodules : true
+
+      - name : install markdown-pdf
+        run : sudo npm install -g markdown-pdf
+
+      - name: Get Config Info
+        id: config_info
+        working-directory: ${{github.workspace}}
+        shell : bash
+        run : |
+          mkdir build
+          cd build
+          ../common/scripts/project_vars.sh > CONFIG.sh
+          cat CONFIG.sh
+          cat CONFIG.sh >> $GITHUB_ENV
+          cat CONFIG.sh >> $GITHUB_OUTPUT
+  
+      - name : convert
+        working-directory: ${{github.workspace}}/docs
+        run : |
+          markdown-pdf -o ${{github.workspace}}/build/USER_MANUAL.pdf USER_MANUAL.md
+          markdown-pdf -o ${{github.workspace}}/build/INSTALLATION_GUIDE.pdf INSTALLATION_GUIDE.md
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{env.SF_PROJECT}}-${{env.SF_VERSION}}-MANUAL.pdf
+          path: ${{github.workspace}}/build/USER_MANUAL.pdf
+
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{env.SF_PROJECT}}-INSTALLATION-GUIDE.pdf
+          path: ${{github.workspace}}/build/INSTALLATION_GUIDE.pdf

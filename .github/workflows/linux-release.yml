@@ -24,6 +24,7 @@ env:
   SF_ARTIFACT_PATH : ""
   SF_BUILD_FILE : ""
   SF_VST3_BUILD_PATH : ""
+  SF_VST3_PLUGIN_PATH : ""
   SF_OUTPUT_STEM : ""
   SF_IN_RUNNER: ""
 
@@ -45,7 +46,6 @@ jobs:
 
       - name: Get Config Info
         id: config-info
-        working-directory: ${{github.workspace}}
         shell : bash
         run : |
           ./common/scripts/project_vars.sh > CONFIG.sh
@@ -63,7 +63,7 @@ jobs:
         uses : SolidFuel/actions/test-with-pluginval@main
         with :
           build_dir: ${{env.BUILD_DIR}}
-          plugin : ${{env.SF_VST3_BUILD_PATH}}/${{env.SF_ARTIFACT_PATH}}/${{env.SF_BUILD_FILE}}
+          plugin : ${{env.SF_VST3_PLUGIN_PATH}}
 
       - name: Compress plugin
         id : mkzip

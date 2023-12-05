@@ -24,7 +24,9 @@ env:
   SF_ARTIFACT_PATH : ""
   SF_BUILD_FILE : ""
   SF_VST3_BUILD_PATH : ""
+  SF_VST3_PLUGIN_PATH : ""
   SF_OUTPUT_STEM : ""
+  SF_IN_RUNNER : ""
 
 jobs:
     build:
@@ -37,7 +39,6 @@ jobs:
 
             - name: Get Config Info
               id: config-info
-              working-directory: ${{github.workspace}}
               shell : bash
               run : |
                 ./common/scripts/project_vars.sh > CONFIG.sh
@@ -55,33 +56,35 @@ jobs:
               uses : SolidFuel/actions/test-with-pluginval@main
               with :
                 build_dir: ${{env.BUILD_DIR}}
-                plugin : ${{env.SF_VST3_BUILD_PATH}}/${{env.SF_ARTIFACT_PATH}}/${{env.SF_BUILD_FILE}}
+                plugin : ${{env.SF_VST3_PLUGIN_PATH}}
                 
             - name: Compress plugin win
-              working-directory: ${{github.workspace}}/build
+              working-directory: ${{github.workspace}}/${{env.BUILD_DIR}}
               run : |
                   Set-Location ${env:SF_VST3_BUILD_PATH}/${env:SF_ARTIFACT_PATH}
                   $ZIPNAME="${env:SF_OUTPUT_STEM}-vst3.zip"
-                  Compress-Archive -Path ${env:SF_BUILD_FILE} -CompressionLevel Optimal -Destination ${{github.workspace}}/build/${ZIPNAME}     
+                  Compress-Archive -Path ${env:SF_BUILD_FILE} `
+                    -CompressionLevel Optimal `
+                    -Destination ${ZIPNAME}     
           
             - name: Upload plugin
               uses: actions/upload-artifact@v3
               with:
                   name: ${{env.SF_OUTPUT_STEM}}-vst3.zip
-                  path: ${{github.workspace}}/build/${{env.SF_OUTPUT_STEM}}-vst3.zip
+                  path: ${{github.workspace}}/${{env.BUILD_DIR}}/${{env.SF_OUTPUT_STEM}}-vst3.zip
 
             - name : setup windows installer file
               working-directory: ${{github.workspace}}
               shell : bash
-              run : ./common/scripts/expand_file.sh ./packaging/windows/plugin.iss > ./build/plugin.iss
+              run : ./common/scripts/expand_file.sh ./packaging/windows/plugin.iss > ${{env.BUILD_DIR}}/plugin.iss
                 
             - name : build windows installer
               working-directory: ${{github.workspace}}
-              run: iscc /Dsrcdir="$pwd" .\build\plugin.iss
+              run: iscc /Dsrcdir="$pwd" ${{env.BUILD_DIR}}\plugin.iss
             
             - name: Upload windows installer
               uses: actions/upload-artifact@v3
               with:
                 name: ${{env.SF_OUTPUT_STEM}}-install.exe
-                path: ${{github.workspace}}/build/${{env.SF_PROJ_LOWER}}.exe
+                path: ${{github.workspace}}/${{env.BUILD_DIR}}/${{env.SF_PROJ_LOWER}}.exe
             

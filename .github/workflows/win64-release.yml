@@ -51,13 +51,11 @@ jobs:
                 build_dir: ${{env.BUILD_DIR}}
                 type : ${{env.BUILD_TYPE}}
         
-            - name: Pluginval Windows
-              working-directory: ${{github.workspace}}/build
-              run: |
-                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip -OutFile pluginval.zip
-                Expand-Archive pluginval.zip -DestinationPath .
-                .\pluginval.exe --validate-in-process --strictness-level 10 --output-dir "." ${env:SF_VST3_BUILD_PATH}/${env:SF_ARTIFACT_PATH}/${env:SF_BUILD_FILE} | Out-Host
-                if ($LASTEXITCODE -ne 0 ) { Write-Error "FAILED!!!"; exit 1; }
+            - name: Pluginval
+              uses : SolidFuel/actions/test-with-pluginval@main
+              with :
+                build_dir: ${{env.BUILD_DIR}}
+                plugin : ${{env.SF_VST3_BUILD_PATH}}/${{env.SF_ARTIFACT_PATH}}/${{env.SF_BUILD_FILE}}
                 
             - name: Compress plugin win
               working-directory: ${{github.workspace}}/build

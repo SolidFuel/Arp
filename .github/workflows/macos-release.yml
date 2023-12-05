@@ -53,14 +53,11 @@ jobs:
         build_dir: ${{env.BUILD_DIR}}
         type : ${{env.BUILD_TYPE}}
 
-    - name: Pluginval MacOS
-      working-directory: ${{github.workspace}}/build
-      run: |
-        curl -L "https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip" -o pluginval.zip
-        unzip pluginval
-        pluginval.app/Contents/MacOS/pluginval --strictness-level 10 \
-          --validate-in-process --output-dir "." \
-          "${{env.SF_VST3_BUILD_PATH}}/${{env.SF_ARTIFACT_PATH}}/${{env.SF_BUILD_FILE}}" || exit 1
+    - name: Pluginval
+      uses : SolidFuel/actions/test-with-pluginval@main
+      with :
+        build_dir: ${{env.BUILD_DIR}}
+        plugin : ${{env.SF_VST3_BUILD_PATH}}/${{env.SF_ARTIFACT_PATH}}/${{env.SF_BUILD_FILE}}
 
     - name: Import Certificates
       run: |

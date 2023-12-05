@@ -2,12 +2,17 @@ name: Windows Build
 
 on:
   push:
-    branches: [ "main", "win-build" ]
-  pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+
+# When pushing new commits, cancel any running builds on that branch
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   BUILD_TYPE: Release
+  BUILD_DIR: build
   OS_TAG : win64
   # Just to make vscode happy. These will be set for real
   # in the config-info step
@@ -38,11 +43,11 @@ jobs:
                 cat CONFIG.sh >> $GITHUB_ENV
                 cat CONFIG.sh >> $GITHUB_OUTPUT
 
-            - name: Configure CMake
-              run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
             - name: Build
-              run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+              uses : SolidFuel/actions/config-build-test
+              with :
+                build_dir: ${{env.BUILD_DIR}}
+                type : ${{env.BUILD_TYPE}}
         
             - name: Pluginval Windows
               working-directory: ${{github.workspace}}/build

@@ -3,6 +3,8 @@ name: Windows Build
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 # When pushing new commits, cancel any running builds on that branch

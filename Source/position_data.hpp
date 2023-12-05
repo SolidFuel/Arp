@@ -29,6 +29,14 @@ struct position_data {
     int samples_per_qn;
     bool is_playing = false;
 
+    // This represents how long the plugin has been active
+    // in hires timer ticks. We use this to compute the stop
+    // time for notes independent of the playhead.
+    int64_t tick_count = 0;
+
+    int64_t ticks_per_slot;
+
+    // speed should be realtive to the quarter note.
     double speed = 1.0;
 
     // **NOTE** set speed before calling this function!!
@@ -52,6 +60,8 @@ struct position_data {
             slot_fraction = 0.0;
             slot_number += 1;
         }
+
+
        
     }
 };

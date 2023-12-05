@@ -14,9 +14,11 @@
 #include "../PluginEditor.hpp"
 #include "../Starp.hpp"
 
+#include "version.hpp"
+
 #if SF_DEBUG
     std::unique_ptr<juce::FileLogger> dbgout = 
-        std::unique_ptr<juce::FileLogger>(juce::FileLogger::createDateStampedLogger("Starp", "StarpLogFile", ".txt", "--------V2--------"));
+        std::unique_ptr<juce::FileLogger>(juce::FileLogger::createDateStampedLogger("SolidFuel/Arp", "ArpLogFile", ".txt", "---- " + PLUGIN_VERSION + " (" + GIT_HASH +")"));
 #endif
 
 

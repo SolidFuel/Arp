@@ -25,9 +25,14 @@
 
 using namespace solidfuel;
 
+using int64 = juce::int64;
+
 struct played_note {
+    // midi note value
     int note_value;
-    double end_slot;
+
+    // ending time in hires timer ticks
+    int64_t end_tick;
 
 };
 
@@ -66,7 +71,7 @@ public:
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
 
-    void processMidi(int sample_count, juce::MidiBuffer&);
+    void processMidi(int sample_count, int64 tick_count, juce::MidiBuffer&);
 
     //==========================================================================
 
@@ -108,6 +113,8 @@ private:
     // Sample rate
     double sample_rate_;
 
+    position_data pd;
+
     // Set of notes we can choose from if we need
     // to schedule something.
     juce::SortedSet<int> incoming_notes_;
@@ -147,7 +154,7 @@ private:
 
     double fake_clock_sample_count_ = 0;
 
-    const position_data compute_block_position();
+    void update_position_data(int64 tick_count);
     std::optional<juce::MidiMessage>maybe_play_note(double for_slot,
         double start_pos);
 

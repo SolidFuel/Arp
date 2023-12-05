@@ -46,7 +46,7 @@ jobs:
         cat CONFIG.sh >> "$GITHUB_OUTPUT"
 
     - name: Build
-      uses : SolidFuel/actions/config-build-test
+      uses : SolidFuel/actions/config-build-test@main
       with :
         build_dir: ${{env.BUILD_DIR}}
         type : ${{env.BUILD_TYPE}}

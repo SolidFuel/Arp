@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -15,8 +15,11 @@
 #include "AlgoBase.hpp"
 #include "../AlgorithmParameters.hpp"
 
-#include "../ValueListener.hpp"
 #include "../Starp.hpp"
+
+#include <solidfuel/solidfuel.hpp>
+
+using namespace solidfuel;
 
 class SpiralAlgorithm : public AlgorithmBase {
 
@@ -62,12 +65,12 @@ public :
 
     }
 
-    ~SpiralAlgorithm() {
+    ~SpiralAlgorithm() override {
         p_->direction.removeListener(&direction_listener_);
         p_->start_position.removeListener(&start_position_listener_);
     }
 
-    Algorithm get_algo() const { return Algorithm::Spiral; }
+    Algorithm get_algo() const override { return Algorithm::Spiral; }
 
     void reset() override {
         index_map_.clearQuick();

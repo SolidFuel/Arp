@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -15,8 +15,12 @@
 #include "AlgoBase.hpp"
 #include "../AlgorithmParameters.hpp"
 
-#include "../ValueListener.hpp"
 #include "../Starp.hpp"
+
+#include <solidfuel/solidfuel.hpp>
+
+using namespace solidfuel;
+
 
 class LinearAlgorithm : public AlgorithmBase {
 
@@ -66,13 +70,13 @@ public :
         p_->restart.addListener(&restart_listener_);
     }
 
-    ~LinearAlgorithm() {
+    ~LinearAlgorithm() override {
         p_->direction.removeListener(&direction_listener_);
         p_->zigzag.removeListener(&zigzag_listener_);
         p_->restart.removeListener(&restart_listener_);
     }
 
-    Algorithm get_algo() const { return Algorithm::Linear; }
+    Algorithm get_algo() const override { return Algorithm::Linear; }
 
     int getNextNote(double slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
 

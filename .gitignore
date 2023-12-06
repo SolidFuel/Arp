@@ -10,3 +10,20 @@ out/
 build/
 # vscode configuration directory
 .vscode/
+
+#Vim tempfile
+*.swp
+
+# Macs
+.DS_store
+
+# safety - ignore certs
+*.p12
+*.b64
+
+# other builds
+build-*/
+
+# certificates
+*.p12
+*.b64

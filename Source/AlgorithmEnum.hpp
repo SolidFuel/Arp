@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -15,8 +15,8 @@
 //========================================================================
 enum Algorithm {
     Random,
-    Up,   /* deprecated */
-    Down, /* deprecated */
+    AlgUp,   /* deprecated */
+    AlgDown, /* deprecated */
     Linear,
     Spiral,
 };

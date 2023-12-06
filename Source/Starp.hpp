@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -15,8 +15,8 @@
 
 #include <juce_core/juce_core.h>
 
-#if !defined(STARP_DEBUG)
- #define STARP_DEBUG 1
+#if !defined(SF_DEBUG)
+ #define SF_DEBUG 1
 #endif
 
 #include <string>
@@ -33,7 +33,7 @@ std::string concat(Args&&... args) {
 
 
 
-#if STARP_DEBUG
+#if SF_DEBUG
     extern std::unique_ptr<juce::FileLogger> dbgout;
     #define DBGLOG(...) dbgout->logMessage(concat(__VA_ARGS__));
 #else

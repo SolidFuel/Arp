@@ -1,0 +1,124 @@
+name: MacOS Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+# When pushing new commits, cancel any running builds on that branch
+concurrency:
+  group: macos-build-${{ github.ref }}
+  cancel-in-progress: true
+      
+env:
+  BUILD_TYPE: Release
+  BUILD_DIR: build
+  OS_TAG : macos
+  # Just to make vscode happy. These will be set for real
+  # in the config-info step
+  SF_PROJECT : ""
+  SF_VERSION : ""
+  SF_PROJ_LOWER : ""
+  SF_VST3_BUILD_PATH : ""
+  SF_ARTIFACT_PATH : ""
+  SF_BUILD_FILE : ""
+  SF_VST3_PLUGIN_PATH : ""
+  SF_OUTPUT_STEM: ""
+  SF_IN_RUNNER: ""
+
+
+jobs:
+  build:
+    runs-on: 'macos-latest'
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        
+    - name: Get Config Info
+      id: config-info
+      shell : bash
+      run : |
+        ./common/scripts/project_vars.sh > CONFIG.sh
+        cat CONFIG.sh
+        cat CONFIG.sh >> "$GITHUB_ENV"
+        cat CONFIG.sh >> "$GITHUB_OUTPUT"
+
+    - name: Build
+      uses : SolidFuel/actions/config-build-test@main
+      with :
+        build_dir: ${{env.BUILD_DIR}}
+        type : ${{env.BUILD_TYPE}}
+
+    - name: Pluginval
+      uses : SolidFuel/actions/test-with-pluginval@main
+      with :
+        build_dir: ${{env.BUILD_DIR}}
+        plugin : ${{env.SF_VST3_PLUGIN_PATH}}
+
+    - name: Import APP Certificates 
+      uses: apple-actions/import-codesign-certs@v2
+      with:
+        keychain-password : ${{ secrets.SIGN_KEYCHAIN_PASSWORD }}
+        p12-file-base64: ${{ secrets.SIGN_APP_CERT }}
+        p12-password: ${{ secrets.SIGN_APP_PASSWORD }}
+
+    - name: Import INST Certificates 
+      uses: apple-actions/import-codesign-certs@v2
+      with:
+        keychain-password : ${{ secrets.SIGN_KEYCHAIN_PASSWORD }}
+        create-keychain : false
+        p12-file-base64: ${{ secrets.SIGN_INSTALL_CERT }}
+        p12-password: ${{ secrets.SIGN_INSTALL_PASSWORD }}    
+
+    - name : Codesign plugin
+      working-directory : ${{github.workspace}}/build
+      run : |
+        BINARY="${{env.SF_VST3_PLUGIN_PATH}}/Contents/MacOS/${{env.SF_PROJECT}}"
+        codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" \
+          -v "${BINARY}" \
+          --strict --options=runtime --timestamp
+
+        codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" \
+          -v "${{env.SF_VST3_PLUGIN_PATH}}" \
+          --strict --options=runtime --timestamp
+    
+    - name : Create PKG file
+      id : create_pkg
+      working-directory : ${{github.workspace}}/build
+      run : |
+        pkgbuild --component ${{env.SF_VST3_PLUGIN_PATH}}  \
+          --install-location /Library/Audio/Plug-Ins/VST3/SolidFuel \
+          --sign "${{secrets.DEVELOPER_ID_INSTALLER}}" \
+          ./${{env.SF_PROJECT}}-unsigned.pkg
+
+        productbuild --package ./${{env.SF_PROJECT}}-unsigned.pkg \
+              --sign "${{secrets.DEVELOPER_ID_INSTALLER}}" \
+            ./${{env.SF_OUTPUT_STEM}}-universal.pkg
+
+        echo "PKGNAME=${{env.SF_OUTPUT_STEM}}-universal.pkg" >> "$GITHUB_OUTPUT"
+        
+
+    - name : Notarize PKG
+      working-directory : ${{github.workspace}}/build
+      run : |
+        echo "---Notarize---"
+        xcrun notarytool submit "${{steps.create_pkg.outputs.PKGNAME }}" \
+          --apple-id "${{ secrets.NOTARIZATION_USERNAME }}" \
+          --password "${{ secrets.NOTARIZATION_PASSWORD }}" \
+          --team-id "${{ secrets.TEAM_ID }}" --wait
+        echo "---Notarized---"
+
+        echo "---Staple---"
+        xcrun stapler staple "${{steps.create_pkg.outputs.PKGNAME }}"
+        echo "---Stapled---"
+
+    - name: Upload plugin
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{steps.create_pkg.outputs.PKGNAME }}
+        path: ${{github.workspace}}/${{env.BUILD_DIR}}/${{steps.create_pkg.outputs.PKGNAME }}
+

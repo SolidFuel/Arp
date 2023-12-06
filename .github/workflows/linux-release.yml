@@ -1,0 +1,94 @@
+name: Linux Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+# When pushing new commits, cancel any running builds on that branch
+concurrency:
+  group: linux-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_TYPE: Release
+  BUILD_DIR: build
+  OS_TAG : linux
+  # Just to make vscode happy. These will be set for real
+  # in the config-info step
+  SF_PROJECT : ""
+  SF_VERSION : ""
+  SF_PROJ_LOWER : ""
+  SF_ARTIFACT_PATH : ""
+  SF_BUILD_FILE : ""
+  SF_VST3_BUILD_PATH : ""
+  SF_VST3_PLUGIN_PATH : ""
+  SF_OUTPUT_STEM : ""
+  SF_IN_RUNNER: ""
+
+
+jobs:
+  build:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Configure ubuntu
+        run : |
+          sudo apt-get update
+          sudo apt install xorg-dev libasound2-dev libgl1-mesa-dev  \
+              libcurl4-openssl-dev libwebkit2gtk-4.0-dev
+    
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Get Config Info
+        id: config-info
+        shell : bash
+        run : |
+          ./common/scripts/project_vars.sh > CONFIG.sh
+          cat CONFIG.sh
+          cat CONFIG.sh >> $GITHUB_ENV
+          cat CONFIG.sh >> $GITHUB_OUTPUT
+
+      - name: Build
+        uses : SolidFuel/actions/config-build-test@main
+        with :
+          build_dir: ${{env.BUILD_DIR}}
+          type : ${{env.BUILD_TYPE}}
+    
+      - name: Pluginval
+        uses : SolidFuel/actions/test-with-pluginval@main
+        with :
+          build_dir: ${{env.BUILD_DIR}}
+          plugin : ${{env.SF_VST3_PLUGIN_PATH}}
+
+      - name: Compress plugin
+        id : mkzip
+        working-directory: ${{github.workspace}}/build
+        run : |
+          cd ${{env.SF_VST3_BUILD_PATH}}/${{env.SF_ARTIFACT_PATH}}
+          ZIPNAME="${{env.SF_OUTPUT_STEM}}-vst3.zip"
+          zip -9 -r ${{github.workspace}}/build/${ZIPNAME} ${{env.SF_BUILD_FILE}}
+          echo "ZIPNAME=$ZIPNAME" >> "$GITHUB_OUTPUT"
+  
+      - name: Upload plugin
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{steps.mkzip.outputs.ZIPNAME}}
+          path: ${{github.workspace}}/build/${{steps.mkzip.outputs.ZIPNAME}}
+
+
+      - name: Build .deb
+        id: build_deb
+        working-directory: ${{github.workspace}}/build
+        run : ../common/scripts/create-deb.sh
+    
+      - name: Upload deb
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{steps.build_deb.outputs.deb_file}}
+          path: ${{github.workspace}}/build/${{steps.build_deb.outputs.deb_file}}
+  

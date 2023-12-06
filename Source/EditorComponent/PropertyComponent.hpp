@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -16,13 +16,14 @@
 #include "AlgoChoiceComponent.hpp"
 #include "RandomAlgoOptionsComponent.hpp"
 #include "LinearAlgoOptionsComponent.hpp"
-#include "ButtonGroupComponent.hpp"
-#include "BoxComponent.hpp"
 #include "../ProcessorParameters.hpp"
+
+#include <solidfuel/solidfuel.hpp>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 
 using  SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
+using namespace solidfuel;
 
 class SpeedTypeChoiceComponent : public juce::ChoicePropertyComponent {
 private :
@@ -109,7 +110,6 @@ private:
     std::unique_ptr<SliderAttachment> speedMSecAttachment_;
 
     ValueListener speed_type_listener_;
-    juce::Slider *current_speed_slider_;
 
     juce::Label probabilityLabel_;
     juce::Slider probabilitySlider_;

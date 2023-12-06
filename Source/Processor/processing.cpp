@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -10,8 +10,8 @@
  * in the root directory.
  ****/
 
-#include "../StarpProcessor.hpp"
-#include "../StarpEditor.hpp"
+#include "../PluginProcessor.hpp"
+#include "../PluginEditor.hpp"
 #include "../Starp.hpp"
 
 #include <iomanip>
@@ -38,7 +38,7 @@ bool operator<(const schedule& lhs, const schedule& rhs) { return lhs.start < rh
 
 //============================================================================
 //============================================================================
-void StarpProcessor::prepareToPlay (double sampleRate, int) {
+void PluginProcessor::prepareToPlay (double sampleRate, int) {
 
     DBGLOG("PREPARE called");
     sample_rate_ = sampleRate;
@@ -48,11 +48,13 @@ void StarpProcessor::prepareToPlay (double sampleRate, int) {
     // This will finesse the bypass logic so we don't reset again.
     last_block_call_ = juce::Time::currentTimeMillis();
 
+    DBGLOG("HiResTimer = ", juce::Time::getHighResolutionTicksPerSecond())
+
     reset_data();
 
 }
 
-void StarpProcessor::releaseResources()
+void PluginProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
@@ -65,26 +67,26 @@ void StarpProcessor::releaseResources()
 }
 
 //============================================================================
-void StarpProcessor::update_algorithm(int new_algo) {
+void PluginProcessor::update_algorithm(int new_algo) {
 
-    DBGLOG("StarpProcessor::update_algorithm called # ", new_algo)
+    DBGLOG("PluginProcessor::update_algorithm called # ", new_algo)
 
     if (!algo_obj_ || algo_obj_->get_algo() != new_algo) {
         DBGLOG("Changing to new algorithm # ", new_algo);
 
-        // Up and Down will only show up if setStateInformation is
+        // AlgUp and Down will only show up if setStateInformation is
         // somehow flawed. But lets be cautions.
         switch (new_algo) {
             case Algorithm::Random :
                 algo_obj_ = std::make_unique<RandomAlgorithm>(&parameters_.random_parameters);
                 break;
-            case Algorithm::Up :
+            case Algorithm::AlgUp :
                 parameters_.linear_parameters.direction = LinearParameters::Direction::Up;
                 parameters_.linear_parameters.zigzag = false;
                 parameters_.algorithm_index = Algorithm::Linear;
                 algo_obj_ = std::make_unique<LinearAlgorithm>(&parameters_.linear_parameters);
                 break;
-            case Algorithm::Down :
+            case Algorithm::AlgDown :
                 parameters_.linear_parameters.direction = LinearParameters::Direction::Down;
                 parameters_.linear_parameters.zigzag = false;
                 parameters_.algorithm_index = Algorithm::Linear;
@@ -103,13 +105,13 @@ void StarpProcessor::update_algorithm(int new_algo) {
 }
 
 //============================================================================
-const position_data StarpProcessor::compute_block_position() {
-
-    position_data pd{};
+ void PluginProcessor::update_position_data(int64 tick_count) {
 
     double bpm = 120.0;
     double quarter_notes_per_beat = 1;
     juce::AudioPlayHead::TimeSignature time_sig{4, 4};
+
+    pd.tick_count = tick_count;
 
     auto *play_head = getPlayHead();
 
@@ -138,7 +140,8 @@ const position_data StarpProcessor::compute_block_position() {
         }
     }
 
-    pd.samples_per_qn =  static_cast<int>(std::ceil((sample_rate_ * 60.0) / (bpm * quarter_notes_per_beat)));
+    pd.samples_per_qn =  static_cast<int>(std::ceil((sample_rate_ * 60.0) / 
+                (bpm * quarter_notes_per_beat)));
 
     if (! pd.is_playing ) {
         // need to synthesize the data
@@ -146,12 +149,14 @@ const position_data StarpProcessor::compute_block_position() {
         pd.set_position(fake_clock_sample_count_ / pd.samples_per_qn);
     }
 
-    return pd;
+    pd.ticks_per_slot = int64(juce::Time::getHighResolutionTicksPerSecond() /
+                ((bpm * quarter_notes_per_beat) / (pd.speed * 60.0)  ));
 
 }
 
 //============================================================================
-std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(double for_slot, double start_pos) {
+std::optional<juce::MidiMessage> PluginProcessor::maybe_play_note(
+        double for_slot, double start_pos) {
 
     DBGLOG("maybe_play_note called ", for_slot, " / ", start_pos)
     if (incoming_notes_.size() == 0) {
@@ -192,10 +197,11 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(double for_slot
         
         double gate = getGate(for_slot);
         DBGLOG("--- gate = ", gate)
-        double end_slot = start_pos + gate;
+        auto end_tick =  int64 (pd.tick_count + 
+            ((start_pos - pd.position_as_slots + gate) * pd.ticks_per_slot ));
 
-        active_notes_.add({new_note, end_slot});
-        DBGLOG("--- start ", new_note, " @ ", start_pos, "; end = ", end_slot)
+        active_notes_.add({new_note, end_tick});
+        DBGLOG("--- start ", new_note, " @ ", start_pos, "; end = ", end_tick)
 
     } else {
         DBGLOG("--- algo could not find note to start");
@@ -204,7 +210,10 @@ std::optional<juce::MidiMessage> StarpProcessor::maybe_play_note(double for_slot
     return retval;
 }
 
-void StarpProcessor::schedule_note(double current_pos, double slot_number, bool can_advance) {
+//============================================================================
+void PluginProcessor::schedule_note(double current_pos, double slot_number, 
+                    bool can_advance) {
+
     HashRandom rng{"Humanize", parameters_.get_random_seed(), slot_number};
 
     auto advance = parameters_.timing_advance->get() * can_advance;
@@ -229,12 +238,12 @@ void StarpProcessor::schedule_note(double current_pos, double slot_number, bool 
 }
 
 //============================================================================
-void StarpProcessor::reset_data(bool clear_incoming) {
+void PluginProcessor::reset_data(bool clear_incoming) {
     DBGLOG("   reset_data called");
 
     last_scheduled_slot_number_ = -1.0;
     scheduled_notes_.clearQuick();
-    active_notes_.clearQuick();
+    //active_notes_.clearQuick();
 
     if (clear_incoming) {
         incoming_notes_.clearQuick();
@@ -245,9 +254,10 @@ void StarpProcessor::reset_data(bool clear_incoming) {
 }
 
 //============================================================================
-void StarpProcessor::processBlock (juce::AudioBuffer<double>& buffer,
+void PluginProcessor::processBlock (juce::AudioBuffer<double>& buffer,
                                     juce::MidiBuffer& midiBuffer) {
 
+    auto ticks = juce::Time::getHighResolutionTicks();
 
     //DBGLOG("--- ProcessBlock START")
 
@@ -256,41 +266,47 @@ void StarpProcessor::processBlock (juce::AudioBuffer<double>& buffer,
     for (auto i = 0; i < buffer.getNumChannels(); ++i)
         buffer.clear (i, 0, sample_count);
 
-    processMidi(sample_count, midiBuffer);
+    processMidi(sample_count, ticks, midiBuffer);
 
 }
 
 //============================================================================
-void StarpProcessor::processBlock (juce::AudioBuffer<float>& buffer,
+void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                     juce::MidiBuffer& midiBuffer) {
 
 
     //DBGLOG("--- ProcessBlock START")
+
+    auto ticks = juce::Time::getHighResolutionTicks();
 
     auto sample_count = buffer.getNumSamples();
 
     for (auto i = 0; i < buffer.getNumChannels(); ++i)
         buffer.clear (i, 0, sample_count);
 
-    processMidi(sample_count, midiBuffer);
+    processMidi(sample_count, ticks, midiBuffer);
 
 }
 
 //============================================================================
-void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer ) {
+void PluginProcessor::processMidi(int sample_count, int64 tick_count,
+                juce::MidiBuffer& midiBuffer ) {
 
     if (algo_changed_) {
         algo_changed_ = false;
         update_algorithm(parameters_.get_algo_index());
     }
 
-    position_data pd = compute_block_position();
+    update_position_data(tick_count);
 
     double slots_in_buffer = (double(sample_count) / double(pd.samples_per_qn)) / pd.speed;
-    
-    auto slot_duration = static_cast<int>(std::ceil(double(pd.samples_per_qn) * pd.speed));
+    // How long is the buffer in HiRez ticks
+    // All the casting is due to the fact that slots_in_buffer will
+    // always be (0, 1] so integer math will come out as zero.
+    int64 ticks_in_buffer = int64(double(pd.ticks_per_slot) * slots_in_buffer);
 
-    // auto this_call_time = juce::Time::currentTimeMillis();
+    // how many samples in a slot
+    auto slot_duration = static_cast<int>(std::ceil(double(pd.samples_per_qn) * pd.speed));
 
     bool do_cleanup = false;
     bool clear_incoming = true;
@@ -305,8 +321,10 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
     if (pd.position_as_slots < last_position_) {
         // we must have looped without stopping.
-        // clear everything and restart. Do we need to send note-offs ?
-        // Assume not for now.
+        // clear everything and restart. 
+        // This isn't really right. If we are looping without stopping,
+        // then we should let things that started at the end of the loop
+        // continue. See also below where we stop all active notes.
         DBGLOG("--- LOOPING - resetting data");
         do_cleanup = true;
         // During loops, Cubase has a habit of sending the Note-Ons
@@ -327,14 +345,16 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
     //DBGLOG("processBlock setup done")
 
 
-#if STARP_DEBUG
-    if (pd.is_playing || !midiBuffer.isEmpty() || !incoming_notes_.isEmpty() || !active_notes_.isEmpty() ) {
+#if SF_DEBUG
+    if (pd.is_playing || !midiBuffer.isEmpty() 
+            || !incoming_notes_.isEmpty() 
+            || !active_notes_.isEmpty() ) {
         std::stringstream x;
         x << "START playing = " << pd.is_playing   << "; ppq_pos = " << pd.qn_position 
             << "; pos_as_slots = " << pd.position_as_slots 
             << ";\n     slot_number = " << pd.slot_number
             << "; slot_fraction = " << std::setprecision(7) << pd.slot_fraction 
-            << ";\n     slots_in_buffer = " << slots_in_buffer
+            << ";\n     ticks_in_buffer = " << ticks_in_buffer
             << "; last_sched_slot = " << last_scheduled_slot_number_;
         dbgout->logMessage(x.str());
     }
@@ -344,9 +364,12 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
     // === Read Midi Messages and update incoming_notes_ set
     juce::MidiBuffer newBuffer;
 
+    // These are used if debug is set
     int on_count = 0;
     int off_count = 0;
     int stop_count = 0;
+
+    juce::ignoreUnused(on_count, off_count, stop_count);
 
     for (const auto metadata : midiBuffer)
     {
@@ -361,7 +384,8 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
                 notes_changed_ = true;
                 off_count += 1;
             } else {
-                // if we didn't see the NoteOn assume we were bypassed and put the message back in the buffer.
+                // if we didn't see the NoteOn assume we were bypassed 
+                // and put the message back in the buffer.
                 newBuffer.addEvent(msg, metadata.samplePosition);
             }
         } else {
@@ -381,16 +405,18 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
         auto thisNote = active_notes_.getUnchecked(idx);
         auto note_value = thisNote.note_value;
-        auto end_slot = thisNote.end_slot;
+        auto end_tick = thisNote.end_tick;
+        auto end_buffer = pd.tick_count + ticks_in_buffer;
 
-        if ( (pd.position_as_slots + slots_in_buffer) > end_slot ) {
+        if (play_transition && !pd.is_playing) {
+            // We stopped, so turn all active notes off
+            DBGLOG("stop ", note_value, " @ ", 2);
+            midiBuffer.addEvent(
+                juce::MidiMessage::noteOff (1, note_value), sample_count - 2);
+            stop_count += 1;
+        } else if ( end_buffer > end_tick ) {
             // This is the number of samples into the buffer where the note should turn off.
-            // If the arp speed was changed while the note was playing, it is possible that
-            // the offset could be calculated as negative. The jmin is to choose instead to
-            // end it immediately.
-            // Note -- to make this work really correctly, we need to fix the off position
-            // on something other than slots. Say - the "qn" position instead.
-            int offset = juce::jmin(0, int((end_slot - pd.position_as_slots) * slot_duration));
+            int offset = int((end_tick - end_buffer) / pd.ticks_per_slot);
             DBGLOG("stop ", note_value, " @ ", offset);
             midiBuffer.addEvent(juce::MidiMessage::noteOff (1, note_value), offset);
             stop_count += 1;
@@ -407,8 +433,10 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
     //DBGLOG("active notes processed")
 
     if (pd.is_playing || !incoming_notes_.isEmpty() || !active_notes_.isEmpty() ) {
-        DBGLOG("incoming = ", incoming_notes_.size(), "; active = ", active_notes_.size(),
-            "; changed = ", notes_changed_, "; on = ", on_count, "; off = ", off_count, "; stop = ", stop_count
+        DBGLOG("incoming = ", incoming_notes_.size(), "; active = ", 
+                active_notes_.size(), "; changed = ", notes_changed_, 
+                "; on = ", on_count, "; off = ", off_count, 
+                "; stop = ", stop_count
         )
     }
 
@@ -479,7 +507,7 @@ void StarpProcessor::processMidi(int sample_count, juce::MidiBuffer& midiBuffer 
 
 //============================================================================
 // returns the "speed" of notes based on the value of a quarter note = 1
-double StarpProcessor:: getSpeedFactor(double bpm, const juce::AudioPlayHead::TimeSignature &time_sig) {
+double PluginProcessor:: getSpeedFactor(double bpm, const juce::AudioPlayHead::TimeSignature &time_sig) {
     auto speed_type = parameters_.speed_type->getIndex();
     double speed_factor = 1;
 
@@ -512,7 +540,7 @@ double StarpProcessor:: getSpeedFactor(double bpm, const juce::AudioPlayHead::Ti
     return speed_factor;
 }
 
-double StarpProcessor::getGate(double slot) {
+double PluginProcessor::getGate(double slot) {
 
     DBGLOG("--- getGate called = ", slot)
     HashRandom rng{"Gate", parameters_.get_random_seed(), slot};

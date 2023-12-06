@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -15,9 +15,10 @@
 #include "AlgoBase.hpp"
 #include "../AlgorithmParameters.hpp"
 
-#include "../ValueListener.hpp"
 #include "../HashRandom.hpp"
 #include "../Starp.hpp"
+
+#include <solidfuel/solidfuel.hpp>
 
 
 
@@ -57,7 +58,7 @@ public:
         available_notes.clearQuick();
     }
 
-    Algorithm get_algo() const { return Algorithm:: Random; }
+    Algorithm get_algo() const override { return Algorithm:: Random; }
 
 
     int getNextNote(double timeline_slot, const juce::SortedSet<int> &notes, bool notes_changed) override {
@@ -89,17 +90,17 @@ public:
         return last_note;
     }
 
-    virtual ~RandomAlgorithm() override {
+    ~RandomAlgorithm() override {
         // We don't own the p_, so it might out live us.
         // explicitly remove the listener.
         p_->seed_value.removeListener(&seed_listener_);
         p_->replace.removeListener(&replace_listener_);
-    };
+    }
 
 private :
 
-    ValueListener seed_listener_;
-    ValueListener replace_listener_;
+    solidfuel::ValueListener seed_listener_;
+    solidfuel::ValueListener replace_listener_;
 
     void update_parameters() {
         DBGLOG("RandomAlgorithm::update_parameters called")

@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -29,6 +29,14 @@ struct position_data {
     int samples_per_qn;
     bool is_playing = false;
 
+    // This represents how long the plugin has been active
+    // in hires timer ticks. We use this to compute the stop
+    // time for notes independent of the playhead.
+    int64_t tick_count = 0;
+
+    int64_t ticks_per_slot;
+
+    // speed should be realtive to the quarter note.
     double speed = 1.0;
 
     // **NOTE** set speed before calling this function!!
@@ -52,6 +60,8 @@ struct position_data {
             slot_fraction = 0.0;
             slot_number += 1;
         }
+
+
        
     }
 };

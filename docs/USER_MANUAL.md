@@ -1,15 +1,80 @@
-# STARP _V0.2.0_ User Manual
+# solidArp _V0.3.0_ User Manual
 
-Starp - Stable Arpeggiator VST
+**solidArp** is a powerful arppegiator that is a
+little different from others.
 
-## Header
+In Random mode _solidArp_ will make sure that the
+sequence generate - while indeed random - is stable.
+If the midi data doesn't change during successive 
+playbacks, the sequences generated will not change.
 
-![Starp's Header](Header-pic.png)
+## DAW Setup
+
+If a DAW does not appear below, it has not been tested.
+
+### Reaper 6,7
+
+Put it in the Track FX list ahead of the synth.
+
+### Ableton Live 11
+
+Live does not recognize MIDI effects. So, to use this, you will need two tracks.
+
+1. The track with the MIDI and _Starp_.
+1. The track with the synth.
+
+Set the input of the Synth track to be the track with _Starp_ . In the second
+drop down, choose _Starp_ itself (not Pre FX or Post Fx) as the input.
+
+![Live Setup Example](Live-Setup.png)
+
+### Studio One 6
+
+Studio One does not allow you to use 3rd party MIDI effects in the Note FX
+slots. Set up is similar to Ableton Live
+
+_Note_ Record Arm must be on or the MIDI will not reach the synth. Yes, this is
+painful for no good reason.
+[Go Vote](https://answers.presonus.com/43595/add-support-for-third-party-note-fx)
+to change this.
+
+![Live Setup Example](StudioOne-setup.png)
+
+### FL Studio 21
+
+FL does not recognize MIDI effects. The easiest way to set this up is using
+patcher.
+
+1. Add a patcher to the instrument bank with whatever synth/instrument you want.
+1. Add _Starp_ to the patcher and hook it up (it should look like the below).
+   **NOTE** Add it from the synth subsection of the plugin menu, not the effects
+   subsection.
+1. Double Click on the _Starp_ instance and the use the cogwheel in the top-left
+   to set the midi output port. Exact port number does not matter.
+
+![FL Studio Patcher example](starp-patcher.png)
+
+![FL Studio Midi setting for Starp](Starp-patcher-settings.png)
+
+### Cubase 12
+
+Similar to the Ableton Live set up, you will need two tracks. Be sure to route
+the midi from the track with _Starp_ on it to the instrument track (See below).
+
+_Note_ Record Arm must be on or the MIDI will not reach the synth.
+
+![Cubase Midi Setup](cubase-channel-setup.png)
+
+## User Interface
+
+### Header
+
+![solidArp's Header](solidArp-header.png)
 
 The `menu` button on the left contains the `about` menu option to display
 version, copyright, and other information about the software.
 
-## Algorithm
+### Algorithm
 
 The algorithm section consists of two rows. The top row allows you to pick the
 algorithm. The bottom row contains options specific to the algorithm.
@@ -21,7 +86,7 @@ will not show up in the parameters list.
 
 This algorithm is the reason the plug-in exists. Most random arpeggiators will
 give you a different sequence of notes each tme you play through the track.
-_Starp_ will give you the exact same (random) sequence each time you play -
+_solidArp_ will give you the exact same (random) sequence each time you play -
 assuming there is no changes to e.g. the MIDI data or BPM, etc.
 
 The algorithm does its best to make sure that the same note is not played twice
@@ -157,7 +222,7 @@ suffixes are used to modify the base value:
 
 Faster timings are on the left and slower on the right.
 
-_Starp_ uses data from both the BPM of the track and the time signature to
+_solidArp_ uses data from both the BPM of the track and the time signature to
 compute the actual length.
 
 For the whole note values ('1/1', '1/1t', '1/1q') the length of the note is
@@ -174,7 +239,7 @@ Faster timings are on the left and slower on the right.
 
 Fine Adjustment mode is available but rather pointless.
 
-_Starp_ uses data from both the BPM of the track and the time signature to
+_solidArp_ uses data from both the BPM of the track and the time signature to
 compute the actual length.
 
 As an example, if you are in 3/4 time signature and select `4`, there will be 4
@@ -247,7 +312,7 @@ Fine Adjustment mode is available for both.
 
 ### Host Automatable parameters
 
-This table gives the names of the paramters that _Starp_ makes available
+This table gives the names of the paramters that _solidArp_ makes available
 to the host and which control on the UI it corresponds to.
 
 |Parameter Name|UI Control|

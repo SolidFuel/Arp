@@ -1,6 +1,6 @@
 /****
- * Starp - Stable Random Arpeggiator Plugin 
- * Copyright (C) 2023 Mark Hollomon
+ * solidArp - Stable Random Arpeggiator Plugin 
+ * Copyright (C) 2023 Solid Fuel
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the 
  * Free Software Foundation, either version 3 of the License, or (at your 
@@ -21,12 +21,18 @@
 
 #include <fstream>
 
-#include "ValueListener.hpp"
+#include <solidfuel/solidfuel.hpp>
 
+using namespace solidfuel;
+
+using int64 = juce::int64;
 
 struct played_note {
+    // midi note value
     int note_value;
-    double end_slot;
+
+    // ending time in hires timer ticks
+    int64_t end_tick;
 
 };
 
@@ -44,20 +50,20 @@ bool operator==(const schedule& lhs, const schedule& rhs);
 bool operator<(const schedule& lhs, const schedule& rhs);
 
 //==============================================================================
-class StarpProcessor  : public juce::AudioProcessor {
+class PluginProcessor  : public juce::AudioProcessor {
 
 public:
-    //==============================================================================
+    //==========================================================================
     // These are in setup.cpp
-    StarpProcessor();
-    ~StarpProcessor() override;
+    PluginProcessor();
+    ~PluginProcessor() override;
 
-    static juce::AudioProcessor::BusesProperties getDefaultProperties();
+    juce::AudioProcessor::BusesProperties getDefaultProperties();
 
     juce::AudioProcessorEditor* createEditor() override;
-    bool hasEditor() const override { return true; };
+    bool hasEditor() const override { return true; }
 
-    //==============================================================================
+    //==========================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
@@ -65,11 +71,11 @@ public:
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
 
-    void processMidi(int sample_count, juce::MidiBuffer&);
+    void processMidi(int sample_count, int64 tick_count, juce::MidiBuffer&);
 
-    //==============================================================================
+    //==========================================================================
 
-    //==============================================================================
+    //==========================================================================
     // These are in setup.cpp
 
     bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
@@ -89,7 +95,7 @@ public:
     void changeProgramName(int, const juce::String&) override {}
 
 
-    //==============================================================================
+    //==========================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
@@ -98,15 +104,16 @@ private:
 
     ProcessorParameters parameters_;
 
-    //==============================================================================
+    //==========================================================================
 
 
     // Used to set other things based on the Host
-    // defined in setup.hpp
-    static juce::PluginHostType host_type;
+    juce::PluginHostType host_type;
 
     // Sample rate
     double sample_rate_;
+
+    position_data pd;
 
     // Set of notes we can choose from if we need
     // to schedule something.
@@ -132,7 +139,8 @@ private:
 
     bool last_play_state_ = false;
 
-    double getSpeedFactor(double bpm, const juce::AudioPlayHead::TimeSignature &time_sig);
+    double getSpeedFactor(double bpm, 
+        const juce::AudioPlayHead::TimeSignature &time_sig);
     double getGate(double slot);
 
     // Last time in millisecs that processBlock was called.
@@ -146,10 +154,12 @@ private:
 
     double fake_clock_sample_count_ = 0;
 
-    const position_data compute_block_position();
-    std::optional<juce::MidiMessage>maybe_play_note(double for_slot, double start_pos);
+    void update_position_data(int64 tick_count);
+    std::optional<juce::MidiMessage>maybe_play_note(double for_slot,
+        double start_pos);
 
-    void schedule_note(double current_pos, double slot_number, bool can_advance);
+    void schedule_note(double current_pos, double slot_number, 
+        bool can_advance);
 
     void reset_data(bool clear_incoming = true);
 
@@ -163,6 +173,6 @@ private:
 public:
     ProcessorParameters* getParameters() { return &parameters_; }
 
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StarpProcessor)
+    //==========================================================================
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };
